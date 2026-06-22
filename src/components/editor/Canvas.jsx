@@ -1,11 +1,15 @@
 import { useCallback } from 'react'
-import GridLayout from 'react-grid-layout'
+import GridLayout, { getCompactor } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { useEditorStore } from '../../store/editorStore'
 import TextElement from './elements/TextElement'
 import ImageElement from './elements/ImageElement'
+import MapElement from './elements/MapElement'
 import PrintOverlay from './PrintOverlay'
+
+// No compaction + allow overlap (elements stay exactly where placed, can overlap freely)
+const OVERLAP_COMPACTOR = getCompactor(null, true)
 
 export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx }) {
   const { elements, selectedId, select, deselect, updateElementGrid, printOverlay, notebook } =
@@ -55,18 +59,20 @@ export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx,
 
       <GridLayout
         layout={layout}
-        cols={12}
-        rowHeight={rowHeight}
         width={canvasWidth}
+        gridConfig={{
+          cols: 12,
+          rowHeight,
+          margin: [0, 0],
+          containerPadding: [0, 0],
+        }}
+        compactor={OVERLAP_COMPACTOR}
+        dragConfig={{
+          enabled: true,
+          handle: '.drag-handle',
+        }}
+        resizeConfig={{ enabled: true }}
         onLayoutChange={handleLayoutChange}
-        draggableHandle=".drag-handle"
-        margin={[0, 0]}
-        containerPadding={[0, 0]}
-        allowOverlap
-        compactType={null}
-        preventCollision={false}
-        isResizable
-        isDraggable
       >
         {elements.map(el => (
           <div
@@ -95,6 +101,7 @@ export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx,
 
             {el.type === 'text'  && <TextElement  key={el.id} element={el} />}
             {el.type === 'image' && <ImageElement key={el.id} element={el} />}
+            {el.type === 'map'   && <MapElement   key={el.id} element={el} />}
           </div>
         ))}
       </GridLayout>

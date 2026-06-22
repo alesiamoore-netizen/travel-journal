@@ -1,4 +1,5 @@
 import { useEditorStore } from '../../store/editorStore'
+import { TILE_STYLES } from '../map/RouteMap'
 
 const FONT_OPTIONS = [
   { label: 'Georgia',         value: 'Georgia' },
@@ -120,6 +121,92 @@ function ImageInspector({ element }) {
   )
 }
 
+function MapInspector({ element }) {
+  const { updateElement, deleteElement } = useEditorStore()
+  const { data } = element
+  const update = patch => updateElement(element.id, { data: { ...data, ...patch } })
+
+  return (
+    <div className="p-4 space-y-4">
+      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Route Map</p>
+
+      <Field label="Map style">
+        <div className="grid grid-cols-2 gap-1">
+          {Object.entries(TILE_STYLES).map(([key, style]) => (
+            <button
+              key={key}
+              onClick={() => update({ tileStyle: key })}
+              className={`py-1.5 text-xs rounded-md border font-medium transition-colors ${
+                data.tileStyle === key
+                  ? 'bg-amber-700 text-white border-amber-700'
+                  : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+              }`}
+            >
+              {style.label}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Route color">
+        <div className="flex items-center gap-2.5">
+          <input
+            type="color"
+            value={data.routeColor}
+            onChange={e => update({ routeColor: e.target.value })}
+            className="w-8 h-8 rounded border border-stone-200 cursor-pointer p-0.5"
+          />
+          <code className="text-xs text-stone-500">{data.routeColor}</code>
+        </div>
+      </Field>
+
+      <Field label="Pin color">
+        <div className="flex items-center gap-2.5">
+          <input
+            type="color"
+            value={data.pinColor}
+            onChange={e => update({ pinColor: e.target.value })}
+            className="w-8 h-8 rounded border border-stone-200 cursor-pointer p-0.5"
+          />
+          <code className="text-xs text-stone-500">{data.pinColor}</code>
+        </div>
+      </Field>
+
+      <Field label="Options">
+        <div className="flex flex-col gap-1.5">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.showRoute}
+              onChange={e => update({ showRoute: e.target.checked })}
+              className="accent-amber-700"
+            />
+            <span className="text-xs text-stone-600">Show route line</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.showPins}
+              onChange={e => update({ showPins: e.target.checked })}
+              className="accent-amber-700"
+            />
+            <span className="text-xs text-stone-600">Show location pins</span>
+          </label>
+        </div>
+      </Field>
+
+      <div className="pt-3 border-t border-stone-100">
+        <button
+          onClick={() => deleteElement(element.id)}
+          className="w-full py-1.5 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+        >
+          Delete element
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Inspector() {
   const { elements, selectedId } = useEditorStore()
   const selected = elements.find(e => e.id === selectedId)
@@ -136,6 +223,8 @@ export default function Inspector() {
         <TextInspector element={selected} />
       ) : selected.type === 'image' ? (
         <ImageInspector element={selected} />
+      ) : selected.type === 'map' ? (
+        <MapInspector element={selected} />
       ) : null}
     </aside>
   )

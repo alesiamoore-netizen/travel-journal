@@ -4,6 +4,7 @@ import { db } from '../db'
 import { useCaptureStore } from '../store/captureStore'
 import DropZone from '../components/capture/DropZone'
 import PhotoGrid from '../components/capture/PhotoGrid'
+import RouteMap from '../components/map/RouteMap'
 
 function NoteEntry({ onSave, onCancel }) {
   const [text, setText] = useState('')
@@ -85,11 +86,32 @@ export default function Capture() {
   const [notebook, setNotebook] = useState(null)
   const [showNote, setShowNote] = useState(false)
   const [gpsStatus, setGpsStatus] = useState(null) // null | 'locating' | { lat, lng, name }
+  const [routePoints, setRoutePoints] = useState([])
+  const [showRouteMap, setShowRouteMap] = useState(false)
 
   useEffect(() => {
     db.notebooks.get(id).then(nb => { if (!nb) { navigate('/'); return }; setNotebook(nb) })
     load(id)
   }, [id])
+
+  // Derive route from in-memory photos whenever photos change
+  useEffect(() => {
+    const pts = photos
+      .filter(p => p.exif?.lat != null && p.exif?.lng != null)
+      .sort((a, b) => {
+        const da = a.exif.dateTaken ?? a.uploadedAt
+        const db2 = b.exif.dateTaken ?? b.uploadedAt
+        return da < db2 ? -1 : da > db2 ? 1 : 0
+      })
+      .map(p => ({
+        id: p.id,
+        lat: p.exif.lat,
+        lng: p.exif.lng,
+        label: p.exif.locationName ?? null,
+        date: p.exif.dateTaken ?? p.uploadedAt,
+      }))
+    setRoutePoints(pts)
+  }, [photos])
 
   const handleFiles = (files) => addPhotos(files)
 
@@ -207,6 +229,38 @@ export default function Capture() {
 
         {/* Photo grid */}
         <PhotoGrid photos={photos} />
+
+        {/* Route map preview — only shown when there are geotagged photos */}
+        {routePoints.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xs font-bold text-stone-400 uppercase tracking-wider">
+                Route — {routePoints.length} {routePoints.length === 1 ? 'stop' : 'stops'}
+              </h2>
+              <button
+                onClick={() => setShowRouteMap(v => !v)}
+                className="text-xs font-medium hover:opacity-75 transition-opacity"
+                style={{ color: accent }}
+              >
+                {showRouteMap ? 'Hide map' : 'Show map'}
+              </button>
+            </div>
+            {showRouteMap && (
+              <div
+                className="rounded-xl overflow-hidden border border-stone-200"
+                style={{ height: 280 }}
+              >
+                <RouteMap
+                  routePoints={routePoints}
+                  tileStyle="minimal"
+                  pinColor={accent}
+                  routeColor={accent}
+                  scrollWheelZoom
+                />
+              </div>
+            )}
+          </section>
+        )}
 
       </main>
     </div>

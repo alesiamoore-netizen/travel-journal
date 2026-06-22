@@ -16,6 +16,14 @@ function defaultData(type) {
     borderStyle: 'none',
     filter: 'none',
   }
+  if (type === 'map') return {
+    tileStyle: 'minimal',
+    showRoute: true,
+    showPins: true,
+    pinColor: '#c0813a',
+    routeColor: '#c0813a',
+    routeWeight: 2,
+  }
   return {}
 }
 
@@ -82,7 +90,9 @@ export const useEditorStore = create((set, get) => ({
       pageId: currentPageId,
       notebookId: notebook.id,
       type,
-      grid: type === 'text' ? { x: 1, y: 1, w: 10, h: 5 } : { x: 2, y: 2, w: 8, h: 8 },
+      grid: type === 'text' ? { x: 1, y: 1, w: 10, h: 5 }
+          : type === 'map'  ? { x: 0, y: 0, w: 12, h: 10 }
+          : { x: 2, y: 2, w: 8, h: 8 },
       data: defaultData(type),
     }
     await db.pageElements.add(element)

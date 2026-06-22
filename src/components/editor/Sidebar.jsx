@@ -73,12 +73,11 @@ export default function Sidebar() {
             <span className="text-xs font-medium">Image</span>
           </button>
           <button
-            disabled
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-300 border border-stone-100 cursor-not-allowed"
-            title="Coming in Phase 4"
+            onClick={() => addElement('map')}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
           >
             <span className="text-sm">🗺</span>
-            <span className="text-xs font-medium">Map (Ph. 4)</span>
+            <span className="text-xs font-medium">Route Map</span>
           </button>
         </div>
       </div>
