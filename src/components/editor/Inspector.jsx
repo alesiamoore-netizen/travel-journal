@@ -1,5 +1,6 @@
 import { useEditorStore } from '../../store/editorStore'
 import { TILE_STYLES } from '../map/RouteMap'
+import ThemePanel from './ThemePanel'
 
 const FONT_OPTIONS = [
   { label: 'Georgia',         value: 'Georgia' },
@@ -214,11 +215,7 @@ export default function Inspector() {
   return (
     <aside className="w-56 bg-white border-l border-stone-200 overflow-y-auto flex-shrink-0">
       {!selected ? (
-        <div className="h-full flex items-center justify-center p-6">
-          <p className="text-xs text-stone-400 text-center leading-relaxed">
-            Click an element to edit its properties
-          </p>
-        </div>
+        <ThemePanel />
       ) : selected.type === 'text' ? (
         <TextInspector element={selected} />
       ) : selected.type === 'image' ? (

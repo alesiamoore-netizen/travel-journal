@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../db'
+import { loadFont } from '../utils/fonts'
 
 function defaultData(type) {
   if (type === 'text') return {
@@ -40,6 +41,15 @@ export const useEditorStore = create((set, get) => ({
     elements: [], selectedId: null, printOverlay: false,
   }),
 
+  updateTheme: async (patch) => {
+    const { notebook } = get()
+    if (!notebook) return
+    const newTheme = { ...notebook.theme, ...patch }
+    const updatedAt = new Date().toISOString()
+    await db.notebooks.update(notebook.id, { theme: newTheme, updatedAt })
+    set(s => ({ notebook: { ...s.notebook, theme: newTheme, updatedAt } }))
+  },
+
   loadNotebook: async (notebookId) => {
     const notebook = await db.notebooks.get(notebookId)
     if (!notebook) return null
@@ -53,6 +63,9 @@ export const useEditorStore = create((set, get) => ({
     }
 
     const elements = await db.pageElements.where('pageId').equals(pages[0].id).toArray()
+    // Pre-load theme fonts
+    loadFont(notebook.theme?.fontHeading)
+    loadFont(notebook.theme?.fontBody)
     set({ notebook, pages, currentPageId: pages[0].id, elements, selectedId: null })
     return notebook
   },

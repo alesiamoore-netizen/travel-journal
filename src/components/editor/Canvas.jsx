@@ -7,6 +7,7 @@ import TextElement from './elements/TextElement'
 import ImageElement from './elements/ImageElement'
 import MapElement from './elements/MapElement'
 import PrintOverlay from './PrintOverlay'
+import { getTextureStyle } from '../../utils/textures'
 
 // No compaction + allow overlap (elements stay exactly where placed, can overlap freely)
 const OVERLAP_COMPACTOR = getCompactor(null, true)
@@ -46,6 +47,9 @@ export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx,
         width: canvasWidth,
         height: displayHeight,
         backgroundColor: notebook?.theme?.backgroundColor ?? '#ffffff',
+        '--font-heading': notebook?.theme?.fontHeading ?? 'Georgia',
+        '--font-body': notebook?.theme?.fontBody ?? 'system-ui',
+        ...getTextureStyle(notebook?.theme?.backgroundTexture),
       }}
       onClick={() => deselect()}
     >
