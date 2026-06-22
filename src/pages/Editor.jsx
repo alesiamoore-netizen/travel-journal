@@ -1,66 +1,54 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { db } from '../db'
+import { useEditorStore } from '../store/editorStore'
+import { getCanvasMetrics } from '../utils/pageSpecs'
+import EditorTopBar from '../components/editor/EditorTopBar'
+import Sidebar from '../components/editor/Sidebar'
+import Canvas from '../components/editor/Canvas'
+import Inspector from '../components/editor/Inspector'
+
+const CANVAS_WIDTH = 720
 
 export default function Editor() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [notebook, setNotebook] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { loadNotebook, reset, notebook } = useEditorStore()
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    db.notebooks.get(id).then((nb) => {
+    loadNotebook(id).then(nb => {
       if (!nb) { navigate('/'); return }
-      setNotebook(nb)
-      setLoading(false)
+      setReady(true)
     })
+    return () => reset()
   }, [id])
 
-  if (loading) {
+  if (!ready || !notebook) {
     return (
-      <div className="min-h-screen bg-stone-100 flex items-center justify-center text-stone-400">
+      <div className="h-screen bg-stone-200 flex items-center justify-center text-stone-400 text-sm">
         Loading…
       </div>
     )
   }
 
-  const accent = notebook.theme?.accentColor || '#c0813a'
+  const metrics = getCanvasMetrics(notebook.pageSize, CANVAS_WIDTH)
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col">
-      <header className="bg-white border-b border-stone-200 px-6 py-3 flex items-center gap-4 shadow-sm">
-        <button
-          onClick={() => navigate('/')}
-          className="text-stone-500 hover:text-stone-900 text-sm transition-colors"
-        >
-          ← Journals
-        </button>
-        <div className="w-px h-5 bg-stone-200" />
-        <h1 className="text-base font-semibold text-stone-900 truncate">{notebook.name}</h1>
-        <div
-          className="h-2 w-2 rounded-full flex-shrink-0"
-          style={{ backgroundColor: accent }}
-        />
-        <div className="ml-auto flex items-center gap-3">
-          <button
-            onClick={() => navigate(`/journal/${id}/capture`)}
-            className="text-sm text-stone-500 hover:text-stone-900 px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
-          >
-            📷 Quick Capture
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 flex items-center justify-center">
-        <div className="text-center text-stone-400">
-          <div className="text-6xl mb-5 select-none">🎨</div>
-          <p className="text-lg font-semibold text-stone-600">Canvas Editor</p>
-          <p className="text-sm mt-2 text-stone-400">Coming in Phase 2</p>
-          <p className="text-xs mt-4 text-stone-300 max-w-xs mx-auto">
-            Drag-and-drop layout grid, TipTap rich text, image blocks, and map elements.
-          </p>
-        </div>
-      </main>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <EditorTopBar />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-auto bg-stone-300 flex items-start justify-center p-10">
+          <Canvas
+            canvasWidth={metrics.displayWidth}
+            displayHeight={metrics.displayHeight}
+            rowHeight={metrics.rowHeight}
+            bleedPx={metrics.bleedPx}
+            marginPx={metrics.marginPx}
+          />
+        </main>
+        <Inspector />
+      </div>
     </div>
   )
 }
