@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "travel-journal",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "C:\\Users\\ICrea\\Claude\\Travel Journal\\start-dev.cmd"],
+      "port": 5174,
+      "autoPort": true
+    }
+  ]
+}
