@@ -6,23 +6,29 @@ export default function SyncPanel({ onClose }) {
   const { lastSynced, lastSyncedBy, setLastSynced } = useSyncStore()
   const [status, setStatus] = useState(null)   // null | 'working' | 'done' | 'error'
   const [message, setMessage] = useState('')
+  const [progress, setProgress] = useState({ current: 0, total: 0 })
   const notConfigured = !GDRIVE_CLIENT_ID
 
   const run = async (action) => {
     setStatus('working')
     setMessage('Connecting to Google Drive…')
+    setProgress({ current: 0, total: 0 })
+
+    const onProgress = (msg, current, total) => {
+      setMessage(msg)
+      setProgress({ current, total })
+    }
+
     try {
       const token = await getAccessToken()
-      setMessage(action === 'backup' ? 'Uploading backup…' : 'Downloading backup…')
       if (action === 'backup') {
-        await backupToDrive(token)
-        const ts = new Date().toISOString()
-        setLastSynced(ts, 'backup')
+        const exportedAt = await backupToDrive(token, onProgress)
+        setLastSynced(exportedAt, 'backup')
         setStatus('done')
-        setMessage('Backup saved to Google Drive!')
+        setMessage('Backup complete — all journals and photos saved to Google Drive.')
       } else {
-        const modifiedTime = await restoreFromDrive(token)
-        setLastSynced(modifiedTime ?? new Date().toISOString(), 'restore')
+        const exportedAt = await restoreFromDrive(token, onProgress)
+        setLastSynced(exportedAt ?? new Date().toISOString(), 'restore')
         setStatus('done')
         setMessage('Restore complete — reload the page to see your journals.')
       }
@@ -32,12 +38,14 @@ export default function SyncPanel({ onClose }) {
     }
   }
 
+  const showBar = status === 'working' && progress.total > 0
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-stone-100">
           <h2 className="font-semibold text-stone-900">Google Drive Sync</h2>
-          <p className="text-xs text-stone-400 mt-0.5">Back up and restore your journals</p>
+          <p className="text-xs text-stone-400 mt-0.5">Journals, pages, photos — everything</p>
         </div>
 
         <div className="p-5 space-y-4">
@@ -47,12 +55,10 @@ export default function SyncPanel({ onClose }) {
                 Add your OAuth Client ID to{' '}
                 <code className="bg-stone-100 px-1 py-0.5 rounded text-xs">.env.local</code>:
               </p>
-              <pre className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-[11px] text-stone-700 overflow-x-auto leading-relaxed">
-{`VITE_GDRIVE_CLIENT_ID=
-  your-id.apps.googleusercontent.com`}
-              </pre>
+              <pre className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-[11px] text-stone-700 overflow-x-auto leading-relaxed whitespace-pre-wrap">{`VITE_GDRIVE_CLIENT_ID=your-id.apps.googleusercontent.com`}</pre>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Get a Client ID at <span className="text-amber-700 font-medium">console.cloud.google.com</span>{' '}
+                Get a Client ID at{' '}
+                <span className="text-amber-700 font-medium">console.cloud.google.com</span>{' '}
                 → APIs &amp; Services → Credentials → OAuth 2.0. Enable the Google Drive API
                 and add <code className="bg-stone-100 px-1 rounded">http://localhost:5173</code> to
                 authorized JavaScript origins.
@@ -68,9 +74,22 @@ export default function SyncPanel({ onClose }) {
               )}
 
               {status === 'working' && (
-                <p className="text-sm text-stone-500 flex items-center gap-2">
-                  <span className="inline-block animate-spin">↻</span> {message}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-stone-500">{message}</p>
+                  {showBar && (
+                    <>
+                      <div className="w-full bg-stone-100 rounded-full h-1.5">
+                        <div
+                          className="bg-amber-600 h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-stone-400 text-right">
+                        {progress.current} / {progress.total}
+                      </p>
+                    </>
+                  )}
+                </div>
               )}
               {status === 'done' && (
                 <p className="text-sm text-green-600 font-medium">{message}</p>
@@ -97,7 +116,8 @@ export default function SyncPanel({ onClose }) {
               </div>
 
               <p className="text-xs text-stone-400 leading-relaxed">
-                Photos are not included in the backup — only journal structure, pages, and layout elements.
+                Backup uploads photos individually — only new photos are uploaded on repeat backups.
+                Large libraries may take a few minutes the first time.
               </p>
             </>
           )}
