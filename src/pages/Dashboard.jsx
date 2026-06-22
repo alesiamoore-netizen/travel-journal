@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useNotebookStore } from '../store/notebookStore'
 import NotebookCard from '../components/notebook/NotebookCard'
 import CreateNotebookModal from '../components/notebook/CreateNotebookModal'
+import SyncPanel from '../components/SyncPanel'
+import { useSyncStore } from '../store/syncStore'
 
 export default function Dashboard() {
   const { notebooks, loading, load } = useNotebookStore()
   const [showCreate, setShowCreate] = useState(false)
+  const [showSync, setShowSync] = useState(false)
+  const { lastSynced } = useSyncStore()
   const navigate = useNavigate()
 
   useEffect(() => { load() }, [])
@@ -20,12 +24,21 @@ export default function Dashboard() {
             {notebooks.length} {notebooks.length === 1 ? 'journal' : 'journals'}
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-        >
-          + New Journal
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSync(true)}
+            className="text-stone-500 hover:text-stone-700 px-3 py-2 rounded-lg text-sm font-medium border border-stone-200 hover:bg-stone-50 transition-colors flex items-center gap-1.5"
+            title={lastSynced ? `Last synced ${new Date(lastSynced).toLocaleString()}` : 'Sync to Google Drive'}
+          >
+            ☁ {lastSynced ? 'Synced' : 'Sync'}
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            + New Journal
+          </button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -64,6 +77,10 @@ export default function Dashboard() {
 
       {showCreate && (
         <CreateNotebookModal onClose={() => setShowCreate(false)} />
+      )}
+
+      {showSync && (
+        <SyncPanel onClose={() => setShowSync(false)} />
       )}
     </div>
   )
