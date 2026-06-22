@@ -8,3 +8,8 @@ db.version(1).stores({
   pageElements: 'id, pageId, notebookId, type',
   photos:       'id, notebookId, filename, uploadedAt',
 })
+
+// v2: adds quick-capture notes
+db.version(2).stores({
+  notes: 'id, notebookId, createdAt',
+})
