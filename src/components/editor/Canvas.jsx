@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { forwardRef, useCallback } from 'react'
 import GridLayout, { getCompactor } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -12,7 +12,7 @@ import { getTextureStyle } from '../../utils/textures'
 // No compaction + allow overlap (elements stay exactly where placed, can overlap freely)
 const OVERLAP_COMPACTOR = getCompactor(null, true)
 
-export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx }) {
+const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx }, ref) {
   const { elements, selectedId, select, deselect, updateElementGrid, printOverlay, notebook } =
     useEditorStore()
 
@@ -42,6 +42,7 @@ export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx,
 
   return (
     <div
+      ref={ref}
       className="relative shadow-xl flex-shrink-0"
       style={{
         width: canvasWidth,
@@ -111,4 +112,6 @@ export default function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx,
       </GridLayout>
     </div>
   )
-}
+})
+
+export default Canvas

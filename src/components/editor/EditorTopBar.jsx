@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEditorStore } from '../../store/editorStore'
 
-export default function EditorTopBar() {
+export default function EditorTopBar({ onExportPdf, exporting }) {
   const navigate = useNavigate()
   const { notebook, printOverlay, togglePrintOverlay } = useEditorStore()
   const accent = notebook?.theme?.accentColor ?? '#c0813a'
@@ -33,11 +33,15 @@ export default function EditorTopBar() {
         </button>
 
         <button
-          disabled
-          className="px-3 py-1 rounded text-xs font-medium text-stone-300 border border-stone-100 cursor-not-allowed"
-          title="Coming in Phase 6"
+          onClick={onExportPdf}
+          disabled={exporting}
+          className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
+            exporting
+              ? 'text-stone-300 border-stone-100 cursor-wait'
+              : 'text-stone-600 border-stone-200 hover:bg-stone-50'
+          }`}
         >
-          Export PDF
+          {exporting ? 'Exporting…' : 'Export PDF'}
         </button>
 
         <button
