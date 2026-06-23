@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { TILE_STYLES } from '../map/RouteMap'
 import ThemePanel from './ThemePanel'
+import { db } from '../../db'
 
 const FONT_OPTIONS = [
   { label: 'Georgia',         value: 'Georgia' },
@@ -101,15 +103,97 @@ function TextInspector({ element }) {
   )
 }
 
+function PhotoPicker({ notebookId, selectedId, onSelect }) {
+  const [photos, setPhotos] = useState([])
+  const [thumbUrls, setThumbUrls] = useState({})
+
+  useEffect(() => {
+    db.photos.where('notebookId').equals(notebookId).reverse().sortBy('uploadedAt').then(setPhotos)
+  }, [notebookId])
+
+  useEffect(() => {
+    const urls = {}
+    photos.forEach(p => {
+      if (p.thumbnailBlob) urls[p.id] = URL.createObjectURL(p.thumbnailBlob)
+    })
+    setThumbUrls(urls)
+    return () => Object.values(urls).forEach(URL.revokeObjectURL)
+  }, [photos])
+
+  if (photos.length === 0) {
+    return (
+      <p className="text-xs text-stone-400 leading-relaxed">
+        No photos yet — go to Capture to upload some first.
+      </p>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
+      {photos.map(p => (
+        <button
+          key={p.id}
+          onClick={() => onSelect(p.id)}
+          className={`aspect-square rounded overflow-hidden border-2 transition-colors ${
+            selectedId === p.id
+              ? 'border-amber-500'
+              : 'border-transparent hover:border-stone-300'
+          }`}
+        >
+          {thumbUrls[p.id]
+            ? <img src={thumbUrls[p.id]} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full bg-stone-200" />}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function ImageInspector({ element }) {
-  const { deleteElement } = useEditorStore()
+  const { updateElement, deleteElement, notebook } = useEditorStore()
+  const { data } = element
+  const update = patch => updateElement(element.id, { data: { ...data, ...patch } })
 
   return (
     <div className="p-4 space-y-4">
       <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Image Block</p>
-      <p className="text-xs text-stone-400 leading-relaxed">
-        Photo upload, crop, filters, and captions are coming in Phase 3.
-      </p>
+
+      <Field label="Photo">
+        <PhotoPicker
+          notebookId={notebook.id}
+          selectedId={data.photoId}
+          onSelect={photoId => update({ photoId })}
+        />
+      </Field>
+
+      <Field label="Fit">
+        <div className="flex gap-1">
+          {['cover', 'contain', 'fill'].map(f => (
+            <button
+              key={f}
+              onClick={() => update({ fit: f })}
+              className={`flex-1 py-1.5 text-xs rounded-md border font-medium capitalize transition-colors ${
+                (data.fit ?? 'cover') === f
+                  ? 'bg-amber-700 text-white border-amber-700'
+                  : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Caption">
+        <input
+          type="text"
+          value={data.caption ?? ''}
+          onChange={e => update({ caption: e.target.value })}
+          placeholder="Optional caption…"
+          className="w-full border border-stone-200 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+        />
+      </Field>
+
       <div className="pt-3 border-t border-stone-100">
         <button
           onClick={() => deleteElement(element.id)}
