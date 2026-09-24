@@ -1,10 +1,31 @@
+import { useState } from 'react'
 import { useEditorStore } from '../../store/editorStore'
+import LayoutPicker from './LayoutPicker'
 
 export default function Sidebar() {
   const { pages, currentPageId, switchPage, addPage, deletePage, addElement } = useEditorStore()
+  const [showLayouts, setShowLayouts] = useState(false)
 
   return (
     <aside className="w-44 bg-white border-r border-stone-200 flex flex-col flex-shrink-0 overflow-hidden">
+      {showLayouts && <LayoutPicker onClose={() => setShowLayouts(false)} />}
+
+      {/* Layouts button */}
+      <div className="p-2 border-b border-stone-100 flex-shrink-0">
+        <button
+          onClick={() => setShowLayouts(true)}
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors text-xs font-semibold tracking-wide"
+        >
+          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="currentColor">
+            <rect x="1" y="1" width="6" height="6" rx="1"/>
+            <rect x="9" y="1" width="6" height="6" rx="1"/>
+            <rect x="1" y="9" width="6" height="6" rx="1"/>
+            <rect x="9" y="9" width="6" height="6" rx="1"/>
+          </svg>
+          Layouts
+        </button>
+      </div>
+
       {/* Pages header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100">
         <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Pages</span>

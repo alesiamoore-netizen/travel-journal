@@ -131,6 +131,29 @@ export const useEditorStore = create((set, get) => ({
     }))
   },
 
+  applyLayout: async (layoutDef) => {
+    const { currentPageId, notebook } = get()
+    await db.pageElements.where('pageId').equals(currentPageId).delete()
+    if (layoutDef.elements.length === 0) {
+      set({ elements: [], selectedId: null })
+      return
+    }
+    const newElements = []
+    for (const el of layoutDef.elements) {
+      const element = {
+        id: crypto.randomUUID(),
+        pageId: currentPageId,
+        notebookId: notebook.id,
+        type: el.type,
+        grid: { ...el.grid },
+        data: { ...defaultData(el.type), ...(el.data ?? {}) },
+      }
+      await db.pageElements.add(element)
+      newElements.push(element)
+    }
+    set({ elements: newElements, selectedId: null })
+  },
+
   select: (id) => set({ selectedId: id }),
   deselect: () => set({ selectedId: null }),
   togglePrintOverlay: () => set(s => ({ printOverlay: !s.printOverlay })),
