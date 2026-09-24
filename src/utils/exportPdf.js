@@ -2,14 +2,38 @@ import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import { PAGE_SPECS } from './pageSpecs'
 
-const EXPORT_SCALE = 4   // 72 dpi base × 4 = 288 dpi effective
-const BLEED_IN = 0.125   // matches pageSpecs bleed
+const EXPORT_SCALE = 4
+const BLEED_IN = 0.125
+const HEADER_H = 0.40   // inches reserved for running header band
+const FOOTER_H = 0.30   // inches reserved for running footer band
+
+function hexToRgb(hex) {
+  const c = (hex || '#888888').replace('#', '').padEnd(6, '0')
+  return [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)]
+}
+
+function fmtDate(s) {
+  if (!s) return ''
+  try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }
+  catch { return '' }
+}
 
 export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPage, onProgress }) {
   const spec = PAGE_SPECS[notebook.pageSize] ?? PAGE_SPECS['8x10']
   const pageW = spec.widthIn + BLEED_IN * 2
   const pageH = spec.heightIn + BLEED_IN * 2
   const orientation = spec.widthIn > spec.heightIn ? 'l' : 'p'
+  const accent = notebook?.theme?.accentColor ?? '#c0813a'
+  const [ar, ag, ab] = hexToRgb(accent)
+
+  const bodyY = HEADER_H
+  const bodyH = pageH - HEADER_H - FOOTER_H
+
+  // Faded accent for footer rule (blend with white at 35%)
+  const fade = 0.35
+  const fr = Math.round(ar * fade + 255 * (1 - fade))
+  const fg = Math.round(ag * fade + 255 * (1 - fade))
+  const fb = Math.round(ab * fade + 255 * (1 - fade))
 
   const pdf = new jsPDF({ orientation, unit: 'in', format: [pageW, pageH], compress: true })
 
@@ -18,7 +42,6 @@ export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPa
 
     if (i > 0) {
       await switchPage(pages[i].id)
-      // Two animation frames + buffer for React render and image decode
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 400))))
     }
 
@@ -33,12 +56,46 @@ export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPa
     })
 
     if (i > 0) pdf.addPage([pageW, pageH], orientation)
-    pdf.addImage(snapshot.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, pageW, pageH)
+
+    // Canvas image fills the body zone (below header, above footer)
+    pdf.addImage(snapshot.toDataURL('image/jpeg', 0.93), 'JPEG', 0, bodyY, pageW, bodyH)
+
+    // ── Running header ──────────────────────────────────────────────────
+    const page = pages[i]
+    const dateStr = fmtDate(page?.date)
+    const locDate = [page?.location, dateStr].filter(Boolean).join(' · ')
+
+    pdf.setFontSize(7)
+    pdf.setTextColor(150, 150, 150)
+    // Journal name — left
+    pdf.text(notebook.name ?? '', BLEED_IN + 0.06, BLEED_IN + 0.18)
+    // Page title — center
+    if (page?.title) {
+      pdf.setFont(undefined, 'bold')
+      pdf.text(page.title, pageW / 2, BLEED_IN + 0.18, { align: 'center' })
+      pdf.setFont(undefined, 'normal')
+    }
+    // Location · date — right
+    if (locDate) pdf.text(locDate, pageW - BLEED_IN - 0.06, BLEED_IN + 0.18, { align: 'right' })
+
+    // Amber rule under header
+    pdf.setDrawColor(ar, ag, ab)
+    pdf.setLineWidth(0.007)
+    pdf.line(BLEED_IN, bodyY - 0.045, pageW - BLEED_IN, bodyY - 0.045)
+
+    // ── Running footer ──────────────────────────────────────────────────
+    // Faded rule above footer
+    pdf.setDrawColor(fr, fg, fb)
+    pdf.setLineWidth(0.004)
+    pdf.line(BLEED_IN, pageH - FOOTER_H + 0.045, pageW - BLEED_IN, pageH - FOOTER_H + 0.045)
+
+    // Page number — center
+    pdf.setFontSize(7)
+    pdf.setTextColor(150, 150, 150)
+    pdf.text(String(i + 1), pageW / 2, pageH - BLEED_IN - 0.08, { align: 'center' })
   }
 
-  if (pages.length > 1) {
-    await switchPage(pages[0].id)
-  }
+  if (pages.length > 1) await switchPage(pages[0].id)
 
   const safe = (notebook.name ?? 'journal').replace(/[<>:"/\\|?*\r\n]/g, '-')
   pdf.save(`${safe}.pdf`)
