@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
 const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
 
@@ -9,6 +10,7 @@ export const firebaseEnabled = !!apiKey
 export let firebaseApp = null
 export let firebaseAuth = null
 export let firestoreDb = null
+export let firebaseStorage = null
 
 if (firebaseEnabled) {
   firebaseApp = initializeApp({
@@ -21,4 +23,5 @@ if (firebaseEnabled) {
   })
   firebaseAuth = getAuth(firebaseApp)
   firestoreDb = getFirestore(firebaseApp)
+  firebaseStorage = getStorage(firebaseApp)
 }

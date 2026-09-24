@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { db } from '../../../db/index'
 import { useEditorStore } from '../../../store/editorStore'
+import { useAuth } from '../../../context/AuthContext'
+import { uploadPhoto } from '../../../firebase/storageHelpers'
+import { fsSavePhoto } from '../../../firebase/firestoreHelpers'
 
 const FILTERS = {
   none:       '',
@@ -34,31 +36,33 @@ const OVERLAY_POSITIONS = {
   'center':       'inset-0 flex items-center justify-center',
 }
 
-async function storePhoto(blob, filename, notebookId) {
-  const { generateThumbnail } = await import('../../../utils/thumbnail')
-  const thumbnailBlob = await generateThumbnail(blob, 400)
-  const photo = {
-    id: crypto.randomUUID(),
-    notebookId,
-    filename,
-    mimeType: blob.type || 'image/jpeg',
-    size: blob.size,
-    blob,
-    thumbnailBlob,
-    uploadedAt: new Date().toISOString(),
-    exif: {},
-  }
-  await db.photos.add(photo)
-  return photo.id
+async function storePhoto(blob, filename, uid, notebookId) {
+  const photo = await uploadPhoto(blob, filename, uid, notebookId)
+  await fsSavePhoto(uid, photo)
+  return photo
 }
 
 export default function ImageElement({ element }) {
   const { data } = element
   const { notebook, updateElement } = useEditorStore()
-  const [src, setSrc] = useState(null)
+  const { user } = useAuth()
   const [dragging, setDragging] = useState(false)
   const [urlInput, setUrlInput] = useState('')
   const [fetchStatus, setFetchStatus] = useState('idle')
+  const [uploading, setUploading] = useState(false)
+
+  const src = data.storageUrl ?? null
+
+  const applyPhoto = async (blob, filename) => {
+    if (!user || !notebook) return
+    setUploading(true)
+    try {
+      const photo = await storePhoto(blob, filename, user.uid, notebook.id)
+      updateElement(element.id, { data: { ...data, photoId: photo.id, storageUrl: photo.storageUrl, thumbnailUrl: photo.thumbnailUrl } })
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleUrlFetch = async () => {
     const url = urlInput.trim()
@@ -69,8 +73,7 @@ export default function ImageElement({ element }) {
       if (!res.ok) throw new Error('fetch failed')
       const blob = await res.blob()
       if (!blob.type.startsWith('image/')) throw new Error('not an image')
-      const photoId = await storePhoto(blob, url.split('/').pop() || 'photo.jpg', notebook.id)
-      updateElement(element.id, { data: { ...data, photoId } })
+      await applyPhoto(blob, url.split('/').pop() || 'photo.jpg')
       setUrlInput('')
       setFetchStatus('idle')
     } catch {
@@ -79,25 +82,13 @@ export default function ImageElement({ element }) {
     }
   }
 
-  useEffect(() => {
-    if (!data.photoId) { setSrc(null); return }
-    let url
-    db.photos.get(data.photoId).then(photo => {
-      if (!photo?.blob) return
-      url = URL.createObjectURL(photo.blob)
-      setSrc(url)
-    })
-    return () => { if (url) URL.revokeObjectURL(url) }
-  }, [data.photoId])
-
   const handleDrop = async (e) => {
     e.preventDefault()
     e.stopPropagation()
     setDragging(false)
     const file = e.dataTransfer.files?.[0] ?? e.dataTransfer.items?.[0]?.getAsFile?.()
     if (file && file.type.startsWith('image/')) {
-      const photoId = await storePhoto(file, file.name, notebook.id)
-      updateElement(element.id, { data: { ...data, photoId } })
+      await applyPhoto(file, file.name)
       return
     }
     const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain')
@@ -107,8 +98,7 @@ export default function ImageElement({ element }) {
         if (!res.ok) throw new Error()
         const blob = await res.blob()
         if (!blob.type.startsWith('image/')) throw new Error()
-        const photoId = await storePhoto(blob, url.split('/').pop() || 'photo.jpg', notebook.id)
-        updateElement(element.id, { data: { ...data, photoId } })
+        await applyPhoto(blob, url.split('/').pop() || 'photo.jpg')
       } catch { /* CORS/fetch failed */ }
     }
   }
@@ -117,15 +107,15 @@ export default function ImageElement({ element }) {
     return (
       <div
         className={`h-full w-full border-2 border-dashed flex flex-col items-center justify-center gap-2 text-stone-400 select-none transition-colors ${
-          dragging ? 'border-amber-400 bg-amber-50' : 'border-stone-300 bg-stone-100'
+          dragging ? 'border-amber-400 bg-amber-50' : uploading ? 'border-amber-300 bg-amber-50/50' : 'border-stone-300 bg-stone-100'
         }`}
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
       >
-        <span className="text-3xl">{dragging ? '📥' : '🖼'}</span>
-        <span className="text-xs font-medium">{dragging ? 'Drop image here' : 'Image block'}</span>
-        {!dragging && <span className="text-xs opacity-60">Drag a photo or paste a URL</span>}
+        <span className="text-3xl">{uploading ? '⏳' : dragging ? '📥' : '🖼'}</span>
+        <span className="text-xs font-medium">{uploading ? 'Uploading…' : dragging ? 'Drop image here' : 'Image block'}</span>
+        {!dragging && !uploading && <span className="text-xs opacity-60">Drag a photo or paste a URL</span>}
         {!dragging && (
           <div className="absolute bottom-0 left-0 right-0 p-1.5 flex gap-1" onClick={e => e.stopPropagation()}>
             <input

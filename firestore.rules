@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Personal data — only accessible by the owner
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Shared co-authoring journals — any signed-in user can read/write
+    match /journals/{journalId}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

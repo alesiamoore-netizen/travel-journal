@@ -1,22 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useEditorStore } from '../../store/editorStore'
-import { db } from '../../db'
+import { useAuth } from '../../context/AuthContext'
+import { fsLoadPhotos } from '../../firebase/firestoreHelpers'
 import LayoutPicker from './LayoutPicker'
 
 function PhotoLibrary({ notebookId, onUse }) {
+  const { user } = useAuth()
   const [photos, setPhotos] = useState([])
-  const [thumbUrls, setThumbUrls] = useState({})
 
   useEffect(() => {
-    db.photos.where('notebookId').equals(notebookId).reverse().sortBy('uploadedAt').then(setPhotos)
-  }, [notebookId])
-
-  useEffect(() => {
-    const urls = {}
-    photos.forEach(p => { if (p.thumbnailBlob) urls[p.id] = URL.createObjectURL(p.thumbnailBlob) })
-    setThumbUrls(urls)
-    return () => Object.values(urls).forEach(URL.revokeObjectURL)
-  }, [photos])
+    if (!user) return
+    fsLoadPhotos(user.uid, notebookId).then(setPhotos)
+  }, [notebookId, user])
 
   if (!photos.length) return (
     <div className="p-3 text-center text-xs text-stone-400 leading-relaxed">
@@ -29,12 +24,12 @@ function PhotoLibrary({ notebookId, onUse }) {
       {photos.map(p => (
         <button
           key={p.id}
-          onClick={() => onUse(p.id)}
+          onClick={() => onUse(p)}
           className="aspect-square rounded overflow-hidden border border-transparent hover:border-amber-400 transition-colors"
           title={p.filename}
         >
-          {thumbUrls[p.id]
-            ? <img src={thumbUrls[p.id]} alt="" className="w-full h-full object-cover" />
+          {p.thumbnailUrl
+            ? <img src={p.thumbnailUrl} alt="" className="w-full h-full object-cover" />
             : <div className="w-full h-full bg-stone-200" />}
         </button>
       ))}
@@ -88,13 +83,14 @@ export default function Sidebar() {
   const [sideTab, setSideTab] = useState('pages') // 'pages' | 'photos'
   const accent = notebook?.theme?.accentColor ?? '#c0813a'
 
-  const handlePhotoUse = (photoId) => {
+  const handlePhotoUse = (photo) => {
+    const photoData = { photoId: photo.id, storageUrl: photo.storageUrl, thumbnailUrl: photo.thumbnailUrl }
     const selected = elements.find(e => e.id === selectedId && e.type === 'image')
     if (selected) {
-      updateElement(selected.id, { data: { ...selected.data, photoId } })
+      updateElement(selected.id, { data: { ...selected.data, ...photoData } })
     } else {
       addElement('image').then(el => {
-        if (el) updateElement(el.id, { data: { ...el.data, photoId } })
+        if (el) updateElement(el.id, { data: { ...el.data, ...photoData } })
       })
     }
   }

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEditorStore } from '../store/editorStore'
+import { useAuth } from '../context/AuthContext'
 import { getCanvasMetrics } from '../utils/pageSpecs'
 import { exportNotebookPdf } from '../utils/exportPdf'
-import { db } from '../db/index'
+import { fsLoadElements } from '../firebase/firestoreHelpers'
 import EditorTopBar from '../components/editor/EditorTopBar'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
@@ -17,6 +18,7 @@ const CANVAS_WIDTH = 680
 export default function Editor() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { loadNotebook, reset, notebook, pages, currentPageId, switchPage, printOverlay, togglePrintOverlay, undo, redo, selectedId, deleteElement } =
     useEditorStore()
   const [ready, setReady] = useState(false)
@@ -28,12 +30,13 @@ export default function Editor() {
   const canvasRef = useRef(null)
 
   useEffect(() => {
-    loadNotebook(id).then(nb => {
+    if (!user) { navigate('/'); return }
+    loadNotebook(user.uid, id).then(nb => {
       if (!nb) { navigate('/'); return }
       setReady(true)
     })
     return () => reset()
-  }, [id])
+  }, [id, user])
 
   // Load adjacent page for spread view
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function Editor() {
     const idx = pages.findIndex(p => p.id === currentPageId)
     const adjIdx = idx > 0 ? idx - 1 : (pages.length > 1 ? 1 : -1)
     if (adjIdx < 0 || adjIdx >= pages.length || adjIdx === idx) { setAdjacentElements([]); return }
-    db.pageElements.where('pageId').equals(pages[adjIdx].id).toArray().then(setAdjacentElements)
+    if (user) fsLoadElements(user.uid, pages[adjIdx].id).then(setAdjacentElements)
   }, [spreadView, currentPageId, pages, ready])
 
   // Page flip animation — suppressed during PDF export

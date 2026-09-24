@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNotebookStore } from '../../store/notebookStore'
-import { db } from '../../db'
+import { useAuth } from '../../context/AuthContext'
+import { fsGetFirstPageCover } from '../../firebase/firestoreHelpers'
 
 function darken(hex, amount = 0.35) {
   const h = hex.replace('#', '')
@@ -20,26 +21,16 @@ function lighten(hex, amount = 0.4) {
 
 export default function NotebookCard({ notebook, onOpen }) {
   const { delete: deleteNotebook } = useNotebookStore()
+  const { user } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [coverUrl, setCoverUrl] = useState(null)
 
   useEffect(() => {
-    let url
-    const load = async () => {
-      const pages = await db.pages.where('notebookId').equals(notebook.id).sortBy('order')
-      if (!pages.length) return
-      const els = await db.pageElements.where('pageId').equals(pages[0].id).filter(e => e.type === 'image' && e.data?.photoId).toArray()
-      if (!els.length) return
-      const photo = await db.photos.get(els[0].data.photoId)
-      if (!photo?.thumbnailBlob) return
-      url = URL.createObjectURL(photo.thumbnailBlob)
-      setCoverUrl(url)
-    }
-    load()
-    return () => { if (url) URL.revokeObjectURL(url) }
-  }, [notebook.id])
+    if (!user) return
+    fsGetFirstPageCover(user.uid, notebook.id).then(url => { if (url) setCoverUrl(url) })
+  }, [notebook.id, user])
 
   const accent = notebook.theme?.accentColor || '#c0813a'
   const spine = darken(accent, 0.4)

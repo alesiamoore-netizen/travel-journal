@@ -1,9 +1,13 @@
 import { create } from 'zustand'
-import { db } from '../db'
 import { loadFont } from '../utils/fonts'
 import {
-  pushElement, deleteElement as fsDeleteEl,
-  pushJournal, pushPage, deletePage as fsDeletePage,
+  fsLoadNotebooks, fsLoadPages, fsLoadElements, fsSavePage, fsUpdatePage, fsDeletePage,
+  fsSaveElement, fsUpdateElement, fsDeleteElement, fsReplacePageElements,
+  fsUpdatePageOrders, fsUpdateNotebook,
+} from '../firebase/firestoreHelpers'
+import {
+  pushElement, deleteElement as fsCollabDeleteEl,
+  pushJournal, pushPage, deletePage as fsCollabDeletePage,
   pushAllElements, subscribeToElements, fetchJournalFromFirestore,
 } from '../firebase/collab'
 import { useCollabStore } from './collabStore'
@@ -21,6 +25,8 @@ function defaultData(type) {
   }
   if (type === 'image') return {
     photoId: null,
+    storageUrl: null,
+    thumbnailUrl: null,
     fit: 'cover',
     caption: '',
     borderStyle: 'none',
@@ -65,7 +71,6 @@ function snapshot(elements) {
   return elements.map(e => ({ ...e, data: { ...e.data } }))
 }
 
-// Returns active Firestore notebook ID, or null when collab is off
 function collabId() {
   const { active, journalId } = useCollabStore.getState()
   return active ? journalId : null
@@ -81,6 +86,9 @@ export const useEditorStore = create((set, get) => ({
   _undoStack: [],
   _redoStack: [],
   _cloudChangesAvailable: false,
+  uid: null,
+
+  setUid: (uid) => set({ uid }),
 
   reset: () => set({
     notebook: null, pages: [], currentPageId: null,
@@ -95,11 +103,10 @@ export const useEditorStore = create((set, get) => ({
   },
 
   undo: async () => {
-    const { _undoStack, _redoStack, elements, currentPageId } = get()
-    if (!_undoStack.length) return
+    const { uid, _undoStack, _redoStack, elements, currentPageId, notebook } = get()
+    if (!_undoStack.length || !uid) return
     const prev = _undoStack[_undoStack.length - 1]
-    await db.pageElements.where('pageId').equals(currentPageId).delete()
-    if (prev.length) await db.pageElements.bulkAdd(prev)
+    await fsReplacePageElements(uid, currentPageId, notebook.id, prev)
     set({
       elements: prev,
       _undoStack: _undoStack.slice(0, -1),
@@ -109,11 +116,10 @@ export const useEditorStore = create((set, get) => ({
   },
 
   redo: async () => {
-    const { _undoStack, _redoStack, elements, currentPageId } = get()
-    if (!_redoStack.length) return
+    const { uid, _undoStack, _redoStack, elements, currentPageId, notebook } = get()
+    if (!_redoStack.length || !uid) return
     const next = _redoStack[_redoStack.length - 1]
-    await db.pageElements.where('pageId').equals(currentPageId).delete()
-    if (next.length) await db.pageElements.bulkAdd(next)
+    await fsReplacePageElements(uid, currentPageId, notebook.id, next)
     set({
       elements: next,
       _redoStack: _redoStack.slice(0, -1),
@@ -123,41 +129,46 @@ export const useEditorStore = create((set, get) => ({
   },
 
   updateTheme: async (patch) => {
-    const { notebook } = get()
-    if (!notebook) return
+    const { uid, notebook } = get()
+    if (!notebook || !uid) return
     const newTheme = { ...notebook.theme, ...patch }
     const updatedAt = new Date().toISOString()
-    await db.notebooks.update(notebook.id, { theme: newTheme, updatedAt })
+    await fsUpdateNotebook(uid, notebook.id, { theme: newTheme, updatedAt })
     set(s => ({ notebook: { ...s.notebook, theme: newTheme, updatedAt } }))
     const cid = collabId()
     if (cid) pushJournal({ ...get().notebook }).catch(console.warn)
   },
 
-  loadNotebook: async (notebookId) => {
-    const notebook = await db.notebooks.get(notebookId)
+  loadNotebook: async (uid, notebookId) => {
+    const all = await fsLoadNotebooks(uid)
+    const notebook = all.find(n => n.id === notebookId)
     if (!notebook) return null
-    let pages = await db.pages.where('notebookId').equals(notebookId).sortBy('order')
+
+    let pages = await fsLoadPages(uid, notebookId)
     if (pages.length === 0) {
-      const page = { id: crypto.randomUUID(), notebookId, order: 0, themeOverrides: {} }
-      await db.pages.add(page)
+      const page = { id: crypto.randomUUID(), notebookId, order: 0, title: '', location: '', date: '', themeOverrides: {} }
+      await fsSavePage(uid, page)
       pages = [page]
     }
-    const elements = await db.pageElements.where('pageId').equals(pages[0].id).toArray()
+    const elements = await fsLoadElements(uid, pages[0].id)
     loadFont(notebook.theme?.fontHeading)
     loadFont(notebook.theme?.fontBody)
-    set({ notebook, pages, currentPageId: pages[0].id, elements, selectedId: null, _undoStack: [], _redoStack: [] })
+    set({ uid, notebook, pages, currentPageId: pages[0].id, elements, selectedId: null, _undoStack: [], _redoStack: [] })
     return notebook
   },
 
   switchPage: async (pageId) => {
-    const elements = await db.pageElements.where('pageId').equals(pageId).toArray()
+    const { uid } = get()
+    if (!uid) return
+    const elements = await fsLoadElements(uid, pageId)
     set({ currentPageId: pageId, elements, selectedId: null, _undoStack: [], _redoStack: [] })
   },
 
   addPage: async () => {
-    const { notebook, pages } = get()
-    const page = { id: crypto.randomUUID(), notebookId: notebook.id, order: pages.length, themeOverrides: {} }
-    await db.pages.add(page)
+    const { uid, notebook, pages } = get()
+    if (!uid) return
+    const page = { id: crypto.randomUUID(), notebookId: notebook.id, order: pages.length, title: '', location: '', date: '', themeOverrides: {} }
+    await fsSavePage(uid, page)
     set({ pages: [...pages, page], currentPageId: page.id, elements: [], selectedId: null, _undoStack: [], _redoStack: [] })
     const cid = collabId()
     if (cid) pushPage(cid, page).catch(console.warn)
@@ -165,27 +176,27 @@ export const useEditorStore = create((set, get) => ({
   },
 
   deletePage: async (pageId) => {
-    const { pages, currentPageId } = get()
-    if (pages.length <= 1) return
-    await db.pageElements.where('pageId').equals(pageId).delete()
-    await db.pages.delete(pageId)
-    const remaining = pages.filter(p => p.id !== pageId)
-    await Promise.all(remaining.map((p, i) => db.pages.update(p.id, { order: i })))
-    set({ pages: remaining.map((p, i) => ({ ...p, order: i })) })
+    const { uid, pages, currentPageId } = get()
+    if (!uid || pages.length <= 1) return
+    await fsDeletePage(uid, pageId)
+    const remaining = pages.filter(p => p.id !== pageId).map((p, i) => ({ ...p, order: i }))
+    await fsUpdatePageOrders(uid, remaining)
+    set({ pages: remaining })
     if (currentPageId === pageId) {
-      const elements = await db.pageElements.where('pageId').equals(remaining[0].id).toArray()
+      const elements = await fsLoadElements(uid, remaining[0].id)
       set({ currentPageId: remaining[0].id, elements, selectedId: null })
     }
     const cid = collabId()
-    if (cid) fsDeletePage(cid, pageId).catch(console.warn)
+    if (cid) fsCollabDeletePage(cid, pageId).catch(console.warn)
   },
 
   duplicatePage: async (pageId) => {
-    const { pages, notebook } = get()
+    const { uid, pages, notebook } = get()
+    if (!uid) return
     const src = pages.find(p => p.id === pageId)
     if (!src) return
     const srcIdx = pages.findIndex(p => p.id === pageId)
-    const srcElements = await db.pageElements.where('pageId').equals(pageId).toArray()
+    const srcElements = await fsLoadElements(uid, pageId)
     const newPage = {
       id: crypto.randomUUID(),
       notebookId: notebook.id,
@@ -195,45 +206,40 @@ export const useEditorStore = create((set, get) => ({
       date: src.date ?? '',
       themeOverrides: { ...(src.themeOverrides ?? {}) },
     }
-    await db.pages.add(newPage)
+    await fsSavePage(uid, newPage)
     const newElements = srcElements.map(el => ({
       ...el,
       id: crypto.randomUUID(),
       pageId: newPage.id,
       data: { ...el.data },
     }))
-    if (newElements.length > 0) await db.pageElements.bulkAdd(newElements)
+    await Promise.all(newElements.map(el => fsSaveElement(uid, el)))
     const inserted = [
       ...pages.slice(0, srcIdx + 1),
       newPage,
       ...pages.slice(srcIdx + 1),
     ].map((p, i) => ({ ...p, order: i }))
-    await Promise.all(inserted.map(p => db.pages.update(p.id, { order: p.order })))
+    await fsUpdatePageOrders(uid, inserted)
     set({ pages: inserted, currentPageId: newPage.id, elements: newElements, selectedId: null, _undoStack: [], _redoStack: [] })
-    const cid = collabId()
-    if (cid) {
-      pushPage(cid, newPage).catch(console.warn)
-      pushAllElements(cid, newElements).catch(console.warn)
-    }
   },
 
   movePage: async (pageId, direction) => {
-    const { pages } = get()
+    const { uid, pages } = get()
+    if (!uid) return
     const idx = pages.findIndex(p => p.id === pageId)
     const newIdx = idx + direction
     if (newIdx < 0 || newIdx >= pages.length) return
     const reordered = [...pages]
     ;[reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]]
     const withOrder = reordered.map((p, i) => ({ ...p, order: i }))
-    await Promise.all(withOrder.map(p => db.pages.update(p.id, { order: p.order })))
+    await fsUpdatePageOrders(uid, withOrder)
     set({ pages: withOrder })
-    const cid = collabId()
-    if (cid) Promise.all(withOrder.map(p => pushPage(cid, p))).catch(console.warn)
   },
 
   addElement: async (type) => {
+    const { uid, currentPageId, notebook } = get()
+    if (!uid) return null
     get()._saveUndo()
-    const { currentPageId, notebook } = get()
     const element = {
       id: crypto.randomUUID(),
       pageId: currentPageId,
@@ -242,7 +248,7 @@ export const useEditorStore = create((set, get) => ({
       grid: defaultGrid(type),
       data: defaultData(type),
     }
-    await db.pageElements.add(element)
+    await fsSaveElement(uid, element)
     set(s => ({ elements: [...s.elements, element], selectedId: element.id }))
     const cid = collabId()
     if (cid) pushElement(cid, element).catch(console.warn)
@@ -250,7 +256,9 @@ export const useEditorStore = create((set, get) => ({
   },
 
   updateElement: async (id, patch) => {
-    await db.pageElements.update(id, patch)
+    const { uid } = get()
+    if (!uid) return
+    await fsUpdateElement(uid, id, patch)
     set(s => ({ elements: s.elements.map(e => e.id === id ? { ...e, ...patch } : e) }))
     const cid = collabId()
     if (cid) {
@@ -260,16 +268,18 @@ export const useEditorStore = create((set, get) => ({
   },
 
   updateElementGrid: (id, grid) => {
-    db.pageElements.update(id, { grid })
+    const { uid } = get()
+    if (uid) fsUpdateElement(uid, id, { grid }).catch(console.warn)
     set(s => ({ elements: s.elements.map(e => e.id === id ? { ...e, grid } : e) }))
-    // Grid moves are very frequent; skip collab push (pushed on next data change)
   },
 
   deleteElement: async (id) => {
+    const { uid } = get()
+    if (!uid) return
     get()._saveUndo()
+    await fsDeleteElement(uid, id)
     const cid = collabId()
-    await db.pageElements.delete(id)
-    if (cid) fsDeleteEl(cid, id).catch(console.warn)
+    if (cid) fsCollabDeleteEl(cid, id).catch(console.warn)
     set(s => ({
       elements: s.elements.filter(e => e.id !== id),
       selectedId: s.selectedId === id ? null : s.selectedId,
@@ -277,15 +287,15 @@ export const useEditorStore = create((set, get) => ({
   },
 
   applyLayout: async (layoutDef) => {
+    const { uid, currentPageId, notebook } = get()
+    if (!uid) return
     get()._saveUndo()
-    const { currentPageId, notebook } = get()
-    await db.pageElements.where('pageId').equals(currentPageId).delete()
     if (layoutDef.elements.length === 0) {
+      await fsReplacePageElements(uid, currentPageId, notebook.id, [])
       set({ elements: [], selectedId: null })
       return
     }
-    const newElements = []
-    for (const el of layoutDef.elements) {
+    const newElements = layoutDef.elements.map(el => {
       let inferredData = {}
       if (el.type === 'text' && !el.data?.textStyle) {
         const { y, w, h } = el.grid
@@ -297,7 +307,7 @@ export const useEditorStore = create((set, get) => ({
           inferredData = { textStyle: 'heading', fontSize: 32, color: '#1a1a1a' }
         }
       }
-      const element = {
+      return {
         id: crypto.randomUUID(),
         pageId: currentPageId,
         notebookId: notebook.id,
@@ -305,16 +315,17 @@ export const useEditorStore = create((set, get) => ({
         grid: { ...el.grid },
         data: { ...defaultData(el.type), ...inferredData, ...(el.data ?? {}) },
       }
-      await db.pageElements.add(element)
-      newElements.push(element)
-    }
+    })
+    await fsReplacePageElements(uid, currentPageId, notebook.id, newElements)
     set({ elements: newElements, selectedId: null })
     const cid = collabId()
     if (cid) pushAllElements(cid, newElements).catch(console.warn)
   },
 
   updatePage: async (pageId, patch) => {
-    await db.pages.update(pageId, patch)
+    const { uid } = get()
+    if (!uid) return
+    await fsUpdatePage(uid, pageId, patch)
     set(s => ({ pages: s.pages.map(p => p.id === pageId ? { ...p, ...patch } : p) }))
     const cid = collabId()
     if (cid) {
@@ -323,16 +334,14 @@ export const useEditorStore = create((set, get) => ({
     }
   },
 
-  // ── Collab (Firebase) ─────────────────────────────────────────────────────
+  // ── Collab ────────────────────────────────────────────────────────────────
 
   enableCollab: async () => {
     const { notebook, pages, elements } = get()
     if (!notebook) return
-    // Push current local state to Firestore
     await pushJournal(notebook)
     await Promise.all(pages.map(p => pushPage(notebook.id, p)))
     await pushAllElements(notebook.id, elements)
-    // Subscribe — just flag when remote changes arrive (user manually refreshes)
     const unsub = subscribeToElements(notebook.id, () => {
       set({ _cloudChangesAvailable: true })
     })
@@ -341,36 +350,22 @@ export const useEditorStore = create((set, get) => ({
   },
 
   refreshFromCloud: async () => {
-    const { notebook } = get()
-    if (!notebook) return
+    const { uid, notebook } = get()
+    if (!notebook || !uid) return
     const data = await fetchJournalFromFirestore(notebook.id)
     if (!data) return
-
-    // Upsert remote pages into Dexie
-    const existingPages = await db.pages.where('notebookId').equals(notebook.id).toArray()
-    const existingIds = new Set(existingPages.map(p => p.id))
     for (const rp of data.pages) {
-      const pageRecord = { ...rp, notebookId: notebook.id, themeOverrides: {} }
-      if (existingIds.has(rp.id)) {
-        await db.pages.update(rp.id, { title: rp.title, location: rp.location, date: rp.date, order: rp.order })
-      } else {
-        await db.pages.add(pageRecord)
-      }
+      await fsSavePage(uid, { ...rp, notebookId: notebook.id, themeOverrides: {} })
     }
-
-    // Replace elements for all remote pages
     const pageIds = data.pages.map(p => p.id)
-    if (pageIds.length) {
-      await db.pageElements.where('pageId').anyOf(pageIds).delete()
-      const remoteEls = data.elements.map(el => ({ ...el, notebookId: notebook.id }))
-      if (remoteEls.length) await db.pageElements.bulkAdd(remoteEls)
+    for (const pid of pageIds) {
+      const remoteEls = data.elements.filter(e => e.pageId === pid)
+      await fsReplacePageElements(uid, pid, notebook.id, remoteEls.map(el => ({ ...el, notebookId: notebook.id })))
     }
-
-    // Reload store state
-    const freshPages = await db.pages.where('notebookId').equals(notebook.id).sortBy('order')
+    const freshPages = await fsLoadPages(uid, notebook.id)
     const { currentPageId } = get()
     const targetId = currentPageId ?? freshPages[0]?.id
-    const freshEls = targetId ? await db.pageElements.where('pageId').equals(targetId).toArray() : []
+    const freshEls = targetId ? await fsLoadElements(uid, targetId) : []
     set({ pages: freshPages, currentPageId: targetId ?? null, elements: freshEls, _cloudChangesAvailable: false })
   },
 

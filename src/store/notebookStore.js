@@ -1,17 +1,26 @@
 import { create } from 'zustand'
-import { db } from '../db'
+import {
+  fsLoadNotebooks, fsSaveNotebook, fsUpdateNotebook, fsDeleteNotebook,
+} from '../firebase/firestoreHelpers'
 
-export const useNotebookStore = create((set) => ({
+export const useNotebookStore = create((set, get) => ({
   notebooks: [],
   loading: false,
+  uid: null,
+
+  setUid: (uid) => set({ uid }),
 
   load: async () => {
+    const { uid } = get()
+    if (!uid) return
     set({ loading: true })
-    const notebooks = await db.notebooks.orderBy('updatedAt').reverse().toArray()
+    const notebooks = await fsLoadNotebooks(uid)
     set({ notebooks, loading: false })
   },
 
   create: async (data) => {
+    const { uid } = get()
+    if (!uid) return null
     const notebook = {
       id: crypto.randomUUID(),
       name: data.name,
@@ -29,32 +38,25 @@ export const useNotebookStore = create((set) => ({
         accentColor: data.accentColor || '#c0813a',
         accentColorSecondary: '#4a7c59',
       },
-      syncMeta: {
-        provider: 'none',
-        remoteFolderId: null,
-        lastSynced: null,
-        status: 'offline',
-      },
+      syncMeta: { provider: 'firestore', status: 'synced' },
     }
-    await db.notebooks.add(notebook)
+    await fsSaveNotebook(uid, notebook)
     set((state) => ({ notebooks: [notebook, ...state.notebooks] }))
     return notebook
   },
 
   delete: async (id) => {
-    await db.transaction('rw', [db.notebooks, db.pages, db.pageElements, db.photos], async () => {
-      const pageIds = await db.pages.where('notebookId').equals(id).primaryKeys()
-      await db.pageElements.where('notebookId').equals(id).delete()
-      await db.pages.bulkDelete(pageIds)
-      await db.photos.where('notebookId').equals(id).delete()
-      await db.notebooks.delete(id)
-    })
+    const { uid } = get()
+    if (!uid) return
+    await fsDeleteNotebook(uid, id)
     set((state) => ({ notebooks: state.notebooks.filter((n) => n.id !== id) }))
   },
 
   update: async (id, patch) => {
+    const { uid } = get()
+    if (!uid) return
     const updated = { ...patch, updatedAt: new Date().toISOString() }
-    await db.notebooks.update(id, updated)
+    await fsUpdateNotebook(uid, id, updated)
     set((state) => ({
       notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, ...updated } : n)),
     }))
