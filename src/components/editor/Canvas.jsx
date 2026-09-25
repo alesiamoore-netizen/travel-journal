@@ -8,13 +8,19 @@ import ImageElement from './elements/ImageElement'
 import MapElement from './elements/MapElement'
 import DividerElement from './elements/DividerElement'
 import StickerElement from './elements/StickerElement'
+import KeepeakeElement from './elements/KeepeakeElement'
+import WeatherElement from './elements/WeatherElement'
+import CollageElement from './elements/CollageElement'
+import DrawingElement from './elements/DrawingElement'
+import CoverElement from './elements/CoverElement'
+import PagePrompts from './PagePrompts'
 import PrintOverlay from './PrintOverlay'
 import { getTextureStyle } from '../../utils/textures'
 
 // No compaction + allow overlap (elements stay exactly where placed, can overlap freely)
 const OVERLAP_COMPACTOR = getCompactor(null, true)
 
-const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx, elements: elementsProp, readOnly }, ref) {
+const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx, elements: elementsProp, readOnly, showPrompts = true }, ref) {
   const store = useEditorStore()
   const elements = elementsProp ?? store.elements
   const { selectedId, select, deselect, updateElementGrid, printOverlay, notebook } = store
@@ -122,15 +128,21 @@ const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeigh
                 </div>
               </div>
 
-              {el.type === 'text'    && <TextElement    key={el.id} element={el} />}
-              {el.type === 'image'   && <ImageElement   key={el.id} element={el} />}
-              {el.type === 'map'     && <MapElement     key={el.id} element={el} />}
-              {el.type === 'divider' && <DividerElement key={el.id} element={el} />}
-              {el.type === 'sticker' && <StickerElement key={el.id} element={el} />}
+              {el.type === 'text'     && <TextElement     key={el.id} element={el} />}
+              {el.type === 'image'    && <ImageElement    key={el.id} element={el} />}
+              {el.type === 'map'      && <MapElement      key={el.id} element={el} />}
+              {el.type === 'divider'  && <DividerElement  key={el.id} element={el} />}
+              {el.type === 'sticker'  && <StickerElement  key={el.id} element={el} />}
+              {el.type === 'keepsake' && <KeepeakeElement key={el.id} element={el} />}
+              {el.type === 'weather'  && <WeatherElement  key={el.id} element={el} />}
+              {el.type === 'collage'  && <CollageElement  key={el.id} element={el} />}
+              {el.type === 'drawing'  && <DrawingElement  key={el.id} element={el} />}
+              {el.type === 'cover'    && <CoverElement    key={el.id} element={el} />}
             </div>
           )
         })}
       </GridLayout>
+      {!readOnly && showPrompts && elements.length === 0 && <PagePrompts />}
     </div>
   )
 })

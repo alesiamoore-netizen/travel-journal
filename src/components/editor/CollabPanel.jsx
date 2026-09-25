@@ -1,11 +1,22 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCollabStore } from '../../store/collabStore'
 import { useEditorStore } from '../../store/editorStore'
 
 export default function CollabPanel() {
   const { enabled, user, signIn, signOut, active } = useCollabStore()
   const { notebook, enableCollab, disableCollab, refreshFromCloud, _cloudChangesAvailable } = useEditorStore()
+  const navigate = useNavigate()
+  const [joinCode, setJoinCode] = useState('')
 
   if (!enabled) return null
+
+  const handleJoin = () => {
+    const code = joinCode.trim()
+    if (!code) return
+    navigate(`/journal/${code}`)
+    setJoinCode('')
+  }
 
   const handleToggle = async () => {
     if (!user) { await signIn(); return }
@@ -55,10 +66,17 @@ export default function CollabPanel() {
 
           {active && (
             <>
-              <div className="text-[10px] text-stone-400 bg-stone-50 rounded px-2 py-1.5 leading-relaxed">
-                Share code: <code className="font-mono text-stone-600 select-all">{shortId}</code>
-                <br />
-                Collaborators open this journal by ID.
+              <div className="text-[10px] text-stone-400 bg-stone-50 rounded px-2 py-1.5 leading-relaxed space-y-1">
+                <p>Share this ID with collaborators:</p>
+                <div className="flex items-center gap-1">
+                  <code className="font-mono text-stone-600 select-all text-[9px] flex-1 truncate">{notebook?.id}</code>
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(notebook?.id ?? '')}
+                    className="text-[9px] text-amber-700 hover:text-amber-900 flex-shrink-0"
+                  >
+                    Copy
+                  </button>
+                </div>
               </div>
               {_cloudChangesAvailable && (
                 <button
@@ -77,6 +95,27 @@ export default function CollabPanel() {
           >
             Sign out
           </button>
+
+          <div className="pt-2 border-t border-stone-100">
+            <p className="text-[10px] text-stone-400 mb-1.5">Open a shared journal</p>
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                placeholder="Journal ID…"
+                className="flex-1 border border-stone-200 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-amber-400"
+              />
+              <button
+                onClick={handleJoin}
+                className="px-2 py-1 text-[10px] bg-stone-100 hover:bg-stone-200 rounded border border-stone-200 transition-colors"
+              >
+                Open
+              </button>
+            </div>
+            <p className="text-[10px] text-stone-300 mt-1">Paste the full journal ID from the owner.</p>
+          </div>
         </div>
       )}
     </div>

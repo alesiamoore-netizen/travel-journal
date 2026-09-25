@@ -20,17 +20,19 @@ function lighten(hex, amount = 0.4) {
 }
 
 export default function NotebookCard({ notebook, onOpen }) {
-  const { delete: deleteNotebook } = useNotebookStore()
+  const { delete: deleteNotebook, duplicate: duplicateNotebook } = useNotebookStore()
   const { user } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
   const [coverUrl, setCoverUrl] = useState(null)
 
   useEffect(() => {
     if (!user) return
+    if (notebook.coverPhotoUrl) { setCoverUrl(notebook.coverPhotoUrl); return }
     fsGetFirstPageCover(user.uid, notebook.id).then(url => { if (url) setCoverUrl(url) })
-  }, [notebook.id, user])
+  }, [notebook.id, notebook.coverPhotoUrl, user])
 
   const accent = notebook.theme?.accentColor || '#c0813a'
   const spine = darken(accent, 0.4)
@@ -47,6 +49,15 @@ export default function NotebookCard({ notebook, onOpen }) {
     if (!confirming) { setConfirming(true); return }
     setDeleting(true)
     await deleteNotebook(notebook.id)
+  }
+
+  const handleDuplicate = async (e) => {
+    e.stopPropagation()
+    setDuplicating(true)
+    try { await duplicateNotebook(notebook.id) } finally {
+      setDuplicating(false)
+      setMenuOpen(false)
+    }
   }
 
   const handleMenuToggle = (e) => {
@@ -153,6 +164,15 @@ export default function NotebookCard({ notebook, onOpen }) {
         />
       </div>
 
+      {/* Share badge */}
+      {notebook.isPublic && (
+        <div className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center" title="Publicly shared">
+          <svg className="w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+        </div>
+      )}
+
       {/* Menu */}
       <div className="absolute top-2 right-2 z-10" onClick={e => e.stopPropagation()}>
         <button
@@ -163,6 +183,14 @@ export default function NotebookCard({ notebook, onOpen }) {
         </button>
         {menuOpen && (
           <div className="absolute right-0 top-8 bg-white border border-stone-200 rounded-lg shadow-xl py-1 min-w-40 z-20">
+            <button
+              className="w-full text-left px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 transition-colors disabled:opacity-50"
+              onClick={handleDuplicate}
+              disabled={duplicating}
+            >
+              {duplicating ? 'Duplicating…' : 'Duplicate journal'}
+            </button>
+            <div className="my-1 border-t border-stone-100" />
             <button
               className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                 confirming ? 'text-red-600 bg-red-50 font-medium' : 'text-red-500 hover:bg-stone-50'

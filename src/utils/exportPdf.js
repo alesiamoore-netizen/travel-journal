@@ -3,6 +3,7 @@ import jsPDF from 'jspdf'
 import { PAGE_SPECS } from './pageSpecs'
 
 const EXPORT_SCALE = 4
+const PRINT_DPI = 300
 const BLEED_IN = 0.125
 const HEADER_H = 0.40   // inches reserved for running header band
 const FOOTER_H = 0.30   // inches reserved for running footer band
@@ -18,7 +19,26 @@ function fmtDate(s) {
   catch { return '' }
 }
 
-export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPage, onProgress }) {
+function drawCropMarks(pdf, pageW, pageH, bleedIn) {
+  const M = 0.05   // gap between bleed edge and crop mark
+  const L = 0.15   // length of each crop mark line
+  pdf.setDrawColor(0, 0, 0)
+  pdf.setLineWidth(0.004)
+  // top-left
+  pdf.line(bleedIn - M - L, bleedIn, bleedIn - M, bleedIn)
+  pdf.line(bleedIn, bleedIn - M - L, bleedIn, bleedIn - M)
+  // top-right
+  pdf.line(pageW - bleedIn + M, bleedIn, pageW - bleedIn + M + L, bleedIn)
+  pdf.line(pageW - bleedIn, bleedIn - M - L, pageW - bleedIn, bleedIn - M)
+  // bottom-left
+  pdf.line(bleedIn - M - L, pageH - bleedIn, bleedIn - M, pageH - bleedIn)
+  pdf.line(bleedIn, pageH - bleedIn + M, bleedIn, pageH - bleedIn + M + L)
+  // bottom-right
+  pdf.line(pageW - bleedIn + M, pageH - bleedIn, pageW - bleedIn + M + L, pageH - bleedIn)
+  pdf.line(pageW - bleedIn, pageH - bleedIn + M, pageW - bleedIn, pageH - bleedIn + M + L)
+}
+
+export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPage, onProgress, printReady = false }) {
   const spec = PAGE_SPECS[notebook.pageSize] ?? PAGE_SPECS['8x10']
   const pageW = spec.widthIn + BLEED_IN * 2
   const pageH = spec.heightIn + BLEED_IN * 2
@@ -48,8 +68,11 @@ export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPa
     const el = getCanvasEl()
     if (!el) continue
 
+    const targetPx = printReady ? spec.widthIn * PRINT_DPI : null
+    const htmlCanvasScale = targetPx ? Math.max(2, targetPx / el.clientWidth) : EXPORT_SCALE
+
     const snapshot = await html2canvas(el, {
-      scale: EXPORT_SCALE,
+      scale: htmlCanvasScale,
       useCORS: true,
       logging: false,
       backgroundColor: notebook.theme?.backgroundColor ?? '#ffffff',
@@ -57,46 +80,46 @@ export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPa
 
     if (i > 0) pdf.addPage([pageW, pageH], orientation)
 
-    // Canvas image fills the body zone (below header, above footer)
-    pdf.addImage(snapshot.toDataURL('image/jpeg', 0.93), 'JPEG', 0, bodyY, pageW, bodyH)
+    if (printReady) {
+      // Full-bleed: canvas fills entire page including bleed area
+      pdf.addImage(snapshot.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pageW, pageH)
+      drawCropMarks(pdf, pageW, pageH, BLEED_IN)
+    } else {
+      // Canvas image fills the body zone (below header, above footer)
+      pdf.addImage(snapshot.toDataURL('image/jpeg', 0.93), 'JPEG', 0, bodyY, pageW, bodyH)
 
-    // ── Running header ──────────────────────────────────────────────────
-    const page = pages[i]
-    const dateStr = fmtDate(page?.date)
-    const locDate = [page?.location, dateStr].filter(Boolean).join(' · ')
+      // ── Running header ────────────────────────────────────────────────
+      const page = pages[i]
+      const dateStr = fmtDate(page?.date)
+      const locDate = [page?.location, dateStr].filter(Boolean).join(' · ')
 
-    pdf.setFontSize(7)
-    pdf.setTextColor(150, 150, 150)
-    // Journal name — left
-    pdf.text(notebook.name ?? '', BLEED_IN + 0.06, BLEED_IN + 0.18)
-    // Page title — center
-    if (page?.title) {
-      pdf.setFont(undefined, 'bold')
-      pdf.text(page.title, pageW / 2, BLEED_IN + 0.18, { align: 'center' })
-      pdf.setFont(undefined, 'normal')
+      pdf.setFontSize(7)
+      pdf.setTextColor(150, 150, 150)
+      pdf.text(notebook.name ?? '', BLEED_IN + 0.06, BLEED_IN + 0.18)
+      if (page?.title) {
+        pdf.setFont(undefined, 'bold')
+        pdf.text(page.title, pageW / 2, BLEED_IN + 0.18, { align: 'center' })
+        pdf.setFont(undefined, 'normal')
+      }
+      if (locDate) pdf.text(locDate, pageW - BLEED_IN - 0.06, BLEED_IN + 0.18, { align: 'right' })
+
+      pdf.setDrawColor(ar, ag, ab)
+      pdf.setLineWidth(0.007)
+      pdf.line(BLEED_IN, bodyY - 0.045, pageW - BLEED_IN, bodyY - 0.045)
+
+      // ── Running footer ────────────────────────────────────────────────
+      pdf.setDrawColor(fr, fg, fb)
+      pdf.setLineWidth(0.004)
+      pdf.line(BLEED_IN, pageH - FOOTER_H + 0.045, pageW - BLEED_IN, pageH - FOOTER_H + 0.045)
+
+      pdf.setFontSize(7)
+      pdf.setTextColor(150, 150, 150)
+      pdf.text(String(i + 1), pageW / 2, pageH - BLEED_IN - 0.08, { align: 'center' })
     }
-    // Location · date — right
-    if (locDate) pdf.text(locDate, pageW - BLEED_IN - 0.06, BLEED_IN + 0.18, { align: 'right' })
-
-    // Amber rule under header
-    pdf.setDrawColor(ar, ag, ab)
-    pdf.setLineWidth(0.007)
-    pdf.line(BLEED_IN, bodyY - 0.045, pageW - BLEED_IN, bodyY - 0.045)
-
-    // ── Running footer ──────────────────────────────────────────────────
-    // Faded rule above footer
-    pdf.setDrawColor(fr, fg, fb)
-    pdf.setLineWidth(0.004)
-    pdf.line(BLEED_IN, pageH - FOOTER_H + 0.045, pageW - BLEED_IN, pageH - FOOTER_H + 0.045)
-
-    // Page number — center
-    pdf.setFontSize(7)
-    pdf.setTextColor(150, 150, 150)
-    pdf.text(String(i + 1), pageW / 2, pageH - BLEED_IN - 0.08, { align: 'center' })
   }
 
   if (pages.length > 1) await switchPage(pages[0].id)
 
   const safe = (notebook.name ?? 'journal').replace(/[<>:"/\\|?*\r\n]/g, '-')
-  pdf.save(`${safe}.pdf`)
+  pdf.save(printReady ? `${safe}-print-ready.pdf` : `${safe}.pdf`)
 }

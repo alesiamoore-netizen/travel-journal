@@ -9,6 +9,7 @@ import {
   pushElement, deleteElement as fsCollabDeleteEl,
   pushJournal, pushPage, deletePage as fsCollabDeletePage,
   pushAllElements, subscribeToElements, fetchJournalFromFirestore,
+  setPresence, clearPresence,
 } from '../firebase/collab'
 import { useCollabStore } from './collabStore'
 
@@ -29,6 +30,10 @@ function defaultData(type) {
     thumbnailUrl: null,
     fit: 'cover',
     caption: '',
+    captionStyle: 'below',
+    captionColor: '#888888',
+    captionFont: 'Georgia',
+    captionAlign: 'center',
     borderStyle: 'none',
     filter: 'none',
     rotation: 0,
@@ -50,21 +55,67 @@ function defaultData(type) {
     pinColor: '#c0813a',
     routeColor: '#c0813a',
     routeWeight: 2,
+    mode: 'route',
+    pinLat: null,
+    pinLng: null,
+    pinLabel: '',
+    pinZoom: 13,
+  }
+  if (type === 'keepsake') return {
+    label: 'Ticket stub',
+    hint: 'Tape or glue here',
+    style: 'dashed',
+    borderColor: 'accent',
+  }
+  if (type === 'weather') return {
+    location: '',
+    date: '',
+    units: 'metric',
+    weatherData: null,
   }
   if (type === 'divider') return {
     style: 'line',
     color: 'accent',
     rotation: 0,
   }
+  if (type === 'collage') return {
+    photos: [],
+    columns: 2,
+    gap: 4,
+    borderRadius: 4,
+  }
+  if (type === 'drawing') return {
+    strokes: [],
+    backgroundColor: 'transparent',
+    strokeColor: '#2c2c2c',
+    strokeWidth: 2,
+  }
+  if (type === 'cover') return {
+    storageUrl: null,
+    thumbnailUrl: null,
+    photoId: null,
+    title: '',
+    subtitle: '',
+    overlayColor: '#00000055',
+    titleColor: '#ffffff',
+    subtitleColor: '#ffffffcc',
+    titleAlign: 'center',
+    titleFont: 'Georgia, serif',
+  }
   return {}
 }
 
 function defaultGrid(type) {
-  if (type === 'text')    return { x: 1, y: 1,  w: 10, h: 5  }
-  if (type === 'map')     return { x: 0, y: 0,  w: 12, h: 10 }
-  if (type === 'divider') return { x: 1, y: 7,  w: 10, h: 1  }
-  if (type === 'sticker') return { x: 4, y: 4,  w: 4,  h: 4  }
-  return                          { x: 2, y: 2,  w: 8,  h: 8  }
+  if (type === 'text')     return { x: 1, y: 1,  w: 10, h: 5  }
+  if (type === 'map')      return { x: 0, y: 0,  w: 12, h: 10 }
+  if (type === 'divider')  return { x: 1, y: 7,  w: 10, h: 1  }
+  if (type === 'sticker')  return { x: 4, y: 4,  w: 4,  h: 4  }
+  if (type === 'keepsake') return { x: 1, y: 2,  w: 10, h: 8  }
+  if (type === 'weather')  return { x: 1, y: 1,  w: 10, h: 4  }
+  if (type === 'collage')  return { x: 0, y: 0,  w: 12, h: 10 }
+  if (type === 'drawing')  return { x: 1, y: 2,  w: 10, h: 8  }
+  if (type === 'cover')    return { x: 0, y: 0,  w: 12, h: 16 }
+  return                           { x: 2, y: 2,  w: 8,  h: 8  }
 }
 
 function snapshot(elements) {
@@ -86,15 +137,29 @@ export const useEditorStore = create((set, get) => ({
   _undoStack: [],
   _redoStack: [],
   _cloudChangesAvailable: false,
+  _saving: 0,
+  _lastSavedAt: null,
   uid: null,
+  _presenceUser: null,
+
+  _track: (promise) => {
+    set(s => ({ _saving: s._saving + 1 }))
+    return promise.finally(() => set(s => ({ _saving: Math.max(0, s._saving - 1), _lastSavedAt: Date.now() })))
+  },
 
   setUid: (uid) => set({ uid }),
 
-  reset: () => set({
-    notebook: null, pages: [], currentPageId: null,
-    elements: [], selectedId: null, printOverlay: false,
-    _undoStack: [], _redoStack: [], _cloudChangesAvailable: false,
-  }),
+  setPresenceUser: (user) => set({ _presenceUser: user ? { uid: user.uid, displayName: user.displayName ?? '', photoURL: user.photoURL ?? '' } : null }),
+
+  reset: () => {
+    const { notebook, uid } = get()
+    if (notebook?.id && uid) clearPresence(notebook.id, uid).catch(console.warn)
+    set({
+      notebook: null, pages: [], currentPageId: null,
+      elements: [], selectedId: null, printOverlay: false,
+      _undoStack: [], _redoStack: [], _cloudChangesAvailable: false,
+    })
+  },
 
   _saveUndo: () => {
     const { elements, _undoStack } = get()
@@ -128,6 +193,13 @@ export const useEditorStore = create((set, get) => ({
     })
   },
 
+  setCoverPhoto: async (url) => {
+    const { uid, notebook } = get()
+    if (!uid || !notebook) return
+    await fsUpdateNotebook(uid, notebook.id, { coverPhotoUrl: url })
+    set(s => ({ notebook: s.notebook ? { ...s.notebook, coverPhotoUrl: url } : s.notebook }))
+  },
+
   updateTheme: async (patch) => {
     const { uid, notebook } = get()
     if (!notebook || !uid) return
@@ -154,14 +226,17 @@ export const useEditorStore = create((set, get) => ({
     loadFont(notebook.theme?.fontHeading)
     loadFont(notebook.theme?.fontBody)
     set({ uid, notebook, pages, currentPageId: pages[0].id, elements, selectedId: null, _undoStack: [], _redoStack: [] })
+    const pu = get()._presenceUser
+    if (pu) setPresence(notebook.id, pu, pages[0].id).catch(console.warn)
     return notebook
   },
 
   switchPage: async (pageId) => {
-    const { uid } = get()
+    const { uid, notebook, _presenceUser } = get()
     if (!uid) return
     const elements = await fsLoadElements(uid, pageId)
     set({ currentPageId: pageId, elements, selectedId: null, _undoStack: [], _redoStack: [] })
+    if (_presenceUser && notebook?.id) setPresence(notebook.id, _presenceUser, pageId).catch(console.warn)
   },
 
   addPage: async () => {
@@ -173,6 +248,25 @@ export const useEditorStore = create((set, get) => ({
     const cid = collabId()
     if (cid) pushPage(cid, page).catch(console.warn)
     return page
+  },
+
+  insertPageAfter: async (afterPageId) => {
+    const { uid, notebook, pages } = get()
+    if (!uid) return
+    const afterIdx = pages.findIndex(p => p.id === afterPageId)
+    const insertIdx = afterIdx < 0 ? pages.length : afterIdx + 1
+    const newPage = { id: crypto.randomUUID(), notebookId: notebook.id, order: insertIdx, title: '', location: '', date: '', themeOverrides: {} }
+    await fsSavePage(uid, newPage)
+    const inserted = [
+      ...pages.slice(0, insertIdx),
+      newPage,
+      ...pages.slice(insertIdx),
+    ].map((p, i) => ({ ...p, order: i }))
+    await fsUpdatePageOrders(uid, inserted)
+    set({ pages: inserted, currentPageId: newPage.id, elements: [], selectedId: null, _undoStack: [], _redoStack: [] })
+    const cid = collabId()
+    if (cid) pushPage(cid, newPage).catch(console.warn)
+    return newPage
   },
 
   deletePage: async (pageId) => {
@@ -236,6 +330,14 @@ export const useEditorStore = create((set, get) => ({
     set({ pages: withOrder })
   },
 
+  reorderPages: async (newOrder) => {
+    const { uid } = get()
+    if (!uid) return
+    const withOrder = newOrder.map((p, i) => ({ ...p, order: i }))
+    await fsUpdatePageOrders(uid, withOrder)
+    set({ pages: withOrder })
+  },
+
   addElement: async (type) => {
     const { uid, currentPageId, notebook } = get()
     if (!uid) return null
@@ -248,7 +350,7 @@ export const useEditorStore = create((set, get) => ({
       grid: defaultGrid(type),
       data: defaultData(type),
     }
-    await fsSaveElement(uid, element)
+    await get()._track(fsSaveElement(uid, element))
     set(s => ({ elements: [...s.elements, element], selectedId: element.id }))
     const cid = collabId()
     if (cid) pushElement(cid, element).catch(console.warn)
@@ -258,7 +360,7 @@ export const useEditorStore = create((set, get) => ({
   updateElement: async (id, patch) => {
     const { uid } = get()
     if (!uid) return
-    await fsUpdateElement(uid, id, patch)
+    await get()._track(fsUpdateElement(uid, id, patch))
     set(s => ({ elements: s.elements.map(e => e.id === id ? { ...e, ...patch } : e) }))
     const cid = collabId()
     if (cid) {
@@ -277,7 +379,7 @@ export const useEditorStore = create((set, get) => ({
     const { uid } = get()
     if (!uid) return
     get()._saveUndo()
-    await fsDeleteElement(uid, id)
+    await get()._track(fsDeleteElement(uid, id))
     const cid = collabId()
     if (cid) fsCollabDeleteEl(cid, id).catch(console.warn)
     set(s => ({
@@ -325,7 +427,7 @@ export const useEditorStore = create((set, get) => ({
   updatePage: async (pageId, patch) => {
     const { uid } = get()
     if (!uid) return
-    await fsUpdatePage(uid, pageId, patch)
+    await get()._track(fsUpdatePage(uid, pageId, patch))
     set(s => ({ pages: s.pages.map(p => p.id === pageId ? { ...p, ...patch } : p) }))
     const cid = collabId()
     if (cid) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useNotebookStore } from '../store/notebookStore'
 import { useAuth } from '../context/AuthContext'
 import NotebookCard from '../components/notebook/NotebookCard'
@@ -9,7 +9,12 @@ export default function Dashboard() {
   const { notebooks, loading, load } = useNotebookStore()
   const { user, signIn, signOut } = useAuth()
   const [showCreate, setShowCreate] = useState(false)
+  const [searchQ, setSearchQ] = useState('')
   const navigate = useNavigate()
+
+  const filtered = searchQ.trim()
+    ? notebooks.filter(n => n.name.toLowerCase().includes(searchQ.toLowerCase()) || (n.description ?? '').toLowerCase().includes(searchQ.toLowerCase()))
+    : notebooks
 
   useEffect(() => {
     if (user) load()
@@ -52,46 +57,75 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f0ebe3' }}>
-      <header className="px-8 py-6 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: '#f0ebe3', borderBottom: '1px solid #ddd5c8' }}>
+    <div className="min-h-screen pb-24 sm:pb-0" style={{ backgroundColor: '#f0ebe3' }}>
+      {/* Header */}
+      <header className="px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: '#f0ebe3', borderBottom: '1px solid #ddd5c8' }}>
         <div>
-          <h1 className="text-3xl font-bold text-stone-900 tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>My Travel Journals</h1>
-          <p className="text-sm text-stone-500 mt-1">
-            {loading ? 'Loading…' : notebooks.length === 0 ? 'No journals yet' : `${notebooks.length} ${notebooks.length === 1 ? 'journal' : 'journals'}`}
+          <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>My Journals</h1>
+          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
+            {loading ? 'Loading…' : notebooks.length === 0 ? 'No journals yet' : searchQ && filtered.length !== notebooks.length ? `${filtered.length} of ${notebooks.length} journals` : `${notebooks.length} ${notebooks.length === 1 ? 'journal' : 'journals'}`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Search — desktop */}
+          {notebooks.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1.5 border border-stone-300 rounded-lg px-2.5 py-1.5 bg-white/70">
+              <svg className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7 7 0 103.65 3.65a7 7 0 0013 13z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQ}
+                onChange={e => setSearchQ(e.target.value)}
+                placeholder="Search journals…"
+                className="w-36 text-sm bg-transparent focus:outline-none text-stone-700 placeholder-stone-400"
+              />
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {user.photoURL && (
               <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border border-stone-200" referrerPolicy="no-referrer" />
             )}
             <span className="text-sm text-stone-600 hidden sm:block">{user.displayName ?? user.email}</span>
           </div>
+          <Link
+            to="/memories"
+            className="text-stone-400 hover:text-stone-600 text-xs px-2 py-1 rounded transition-colors hidden sm:block"
+          >
+            Memories
+          </Link>
+          <Link
+            to="/timeline"
+            className="text-stone-400 hover:text-stone-600 text-xs px-2 py-1 rounded transition-colors hidden sm:block"
+          >
+            Timeline
+          </Link>
           <button
             onClick={signOut}
             className="text-stone-400 hover:text-stone-600 text-xs px-2 py-1 rounded transition-colors"
           >
             Sign out
           </button>
+          {/* Desktop: inline button */}
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="hidden sm:block bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
             + New Journal
           </button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8 py-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
         {loading && (
           <div className="text-center py-20 text-stone-400">Loading your journals…</div>
         )}
 
         {!loading && notebooks.length === 0 && (
-          <div className="text-center py-32">
+          <div className="text-center py-24">
             <div className="text-6xl mb-6 select-none opacity-30">📖</div>
-            <h2 className="text-2xl font-semibold text-stone-700 mb-3" style={{ fontFamily: 'Georgia, serif' }}>No journals yet</h2>
-            <p className="text-stone-500 mb-8 max-w-sm mx-auto leading-relaxed">
+            <h2 className="text-xl sm:text-2xl font-semibold text-stone-700 mb-3" style={{ fontFamily: 'Georgia, serif' }}>No journals yet</h2>
+            <p className="text-stone-500 mb-8 max-w-sm mx-auto leading-relaxed text-sm sm:text-base">
               Create your first travel journal to start building a beautiful, book-style scrapbook.
             </p>
             <button
@@ -103,18 +137,47 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Mobile search bar */}
         {!loading && notebooks.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-            {notebooks.map((notebook) => (
+          <div className="flex sm:hidden items-center gap-1.5 border border-stone-300 rounded-xl px-3 py-2.5 bg-white mb-4">
+            <svg className="w-4 h-4 text-stone-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7 7 0 103.65 3.65a7 7 0 0013 13z" />
+            </svg>
+            <input
+              type="text"
+              value={searchQ}
+              onChange={e => setSearchQ(e.target.value)}
+              placeholder="Search journals…"
+              className="flex-1 text-sm bg-transparent focus:outline-none text-stone-700 placeholder-stone-400"
+            />
+          </div>
+        )}
+
+        {!loading && notebooks.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-8">
+            {filtered.length > 0 ? filtered.map((notebook) => (
               <NotebookCard
                 key={notebook.id}
                 notebook={notebook}
                 onOpen={() => navigate(`/journal/${notebook.id}`)}
               />
-            ))}
+            )) : (
+              <div className="col-span-full py-16 text-center text-stone-400 text-sm">
+                No journals match "{searchQ}"
+              </div>
+            )}
           </div>
         )}
       </main>
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => setShowCreate(true)}
+        className="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-amber-700 text-white rounded-full shadow-xl flex items-center justify-center text-2xl font-light active:bg-amber-800 transition-colors z-20"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        +
+      </button>
 
       {showCreate && (
         <CreateNotebookModal onClose={() => setShowCreate(false)} />

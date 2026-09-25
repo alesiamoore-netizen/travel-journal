@@ -8,15 +8,19 @@ export default function MapElement({ element }) {
   const [routePoints, setRoutePoints] = useState([])
   const [loading, setLoading] = useState(true)
   const { data } = element
+  const isPinMode = data.mode === 'pin'
+  const isItinerary = data.mode === 'itinerary'
+  const stops = data.stops ?? []
 
   useEffect(() => {
+    if (isPinMode || isItinerary) { setLoading(false); return }
     if (!notebook?.id) return
     setLoading(true)
     buildRoute(notebook.id).then(pts => {
       setRoutePoints(pts)
       setLoading(false)
     })
-  }, [notebook?.id])
+  }, [notebook?.id, isPinMode, isItinerary])
 
   if (loading) {
     return (
@@ -26,7 +30,29 @@ export default function MapElement({ element }) {
     )
   }
 
-  if (routePoints.length === 0) {
+  if (isItinerary && stops.length === 0) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 gap-2">
+        <span className="text-3xl">📍</span>
+        <p className="text-xs text-stone-400 text-center px-4 leading-relaxed">
+          Add stops in the inspector to build your itinerary map.
+        </p>
+      </div>
+    )
+  }
+
+  if (isPinMode && data.pinLat == null) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 gap-2">
+        <span className="text-3xl">📍</span>
+        <p className="text-xs text-stone-400 text-center px-4 leading-relaxed">
+          Search for a location in the inspector to pin it on the map.
+        </p>
+      </div>
+    )
+  }
+
+  if (!isPinMode && !isItinerary && routePoints.length === 0) {
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 gap-2">
         <span className="text-3xl">🗺</span>
@@ -42,11 +68,18 @@ export default function MapElement({ element }) {
       <RouteMap
         routePoints={routePoints}
         tileStyle={data.tileStyle}
-        pinColor={data.pinColor}
-        routeColor={data.routeColor}
-        routeWeight={data.routeWeight}
+        pinColor={data.pinColor ?? '#c0813a'}
+        routeColor={data.routeColor ?? '#c0813a'}
+        routeWeight={data.routeWeight ?? 2}
         showRoute={data.showRoute}
         showPins={data.showPins}
+        singlePin={isPinMode}
+        singlePinLat={data.pinLat}
+        singlePinLng={data.pinLng}
+        singlePinLabel={data.pinLabel}
+        singlePinZoom={data.pinZoom ?? 13}
+        itinerary={isItinerary}
+        stops={stops}
       />
     </div>
   )

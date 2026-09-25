@@ -135,6 +135,40 @@ export function subscribeToElements(notebookId, onUpdate) {
   )
 }
 
+// ── Presence (real-time cursor / page awareness) ──────────────────────────────
+
+export async function setPresence(notebookId, user, pageId) {
+  if (!firebaseEnabled || !firestoreDb || !user?.uid) return
+  await setDoc(
+    doc(firestoreDb, 'journals', notebookId, 'presence', user.uid),
+    {
+      uid: user.uid,
+      displayName: user.displayName ?? '',
+      photoURL: user.photoURL ?? '',
+      currentPageId: pageId,
+      updatedAt: serverTimestamp(),
+    },
+  )
+}
+
+export async function clearPresence(notebookId, uid) {
+  if (!firebaseEnabled || !firestoreDb || !uid) return
+  await deleteDoc(doc(firestoreDb, 'journals', notebookId, 'presence', uid))
+}
+
+export function subscribePresence(notebookId, onUpdate) {
+  if (!firebaseEnabled || !firestoreDb) return () => {}
+  return onSnapshot(
+    collection(firestoreDb, 'journals', notebookId, 'presence'),
+    snapshot => {
+      const map = {}
+      snapshot.forEach(d => { map[d.id] = d.data() })
+      onUpdate(map)
+    },
+    err => console.warn('[presence] Firestore listen error:', err),
+  )
+}
+
 // ── Join a shared journal (initial pull from Firestore) ───────────────────────
 
 export async function fetchJournalFromFirestore(notebookId) {

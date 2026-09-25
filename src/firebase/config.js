@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
@@ -22,6 +22,8 @@ if (firebaseEnabled) {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
   })
   firebaseAuth = getAuth(firebaseApp)
-  firestoreDb = getFirestore(firebaseApp)
+  firestoreDb = initializeFirestore(firebaseApp, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  })
   firebaseStorage = getStorage(firebaseApp)
 }

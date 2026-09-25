@@ -49,36 +49,40 @@ export default function ThemePanel() {
       <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Page Theme</p>
 
       {/* Presets */}
-      <Field label="Presets">
-        <div className="grid grid-cols-6 gap-1.5">
+      <Field label="Theme gallery">
+        <div className="grid grid-cols-2 gap-2">
           {THEME_PRESETS.map(preset => (
             <button
               key={preset.id}
               title={preset.label}
               onClick={() => applyPreset(preset)}
-              className={`h-7 rounded relative overflow-hidden transition-all border-2 ${
+              className={`relative rounded-lg overflow-hidden transition-all border-2 text-left ${
                 isCurrentPreset(preset)
-                  ? 'border-amber-500 shadow-sm scale-105'
+                  ? 'border-amber-500 shadow-md'
                   : 'border-stone-200 hover:border-stone-400'
               }`}
               style={{ backgroundColor: preset.backgroundColor }}
             >
-              {/* Accent corner chip */}
-              <div
-                className="absolute bottom-0 right-0 w-3 h-3"
-                style={{
-                  backgroundColor: preset.accentColor,
-                  clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-                }}
-              />
+              <div className="px-2 pt-2 pb-1.5">
+                <p
+                  className="text-xs font-bold leading-tight truncate"
+                  style={{ fontFamily: preset.fontHeading, color: preset.accentColor }}
+                >
+                  {preset.label}
+                </p>
+                <p
+                  className="text-[9px] leading-snug opacity-60 mt-0.5"
+                  style={{ fontFamily: preset.fontBody, color: preset.accentColor }}
+                >
+                  Aa Bb
+                </p>
+              </div>
+              {isCurrentPreset(preset) && (
+                <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-amber-500 flex items-center justify-center">
+                  <span className="text-white" style={{ fontSize: 7 }}>✓</span>
+                </div>
+              )}
             </button>
-          ))}
-        </div>
-        <div className="flex justify-between mt-1 px-0.5">
-          {THEME_PRESETS.map(p => (
-            <span key={p.id} className="text-[9px] text-stone-400 text-center" style={{ width: 28 }}>
-              {p.label}
-            </span>
           ))}
         </div>
       </Field>

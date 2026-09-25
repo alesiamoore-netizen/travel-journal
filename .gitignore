@@ -1,4 +1,27 @@
 node_modules/
 dist/
+dev-dist/
 .DS_Store
 *.local
+
+# Claude Code session settings
+.claude/settings.local.json
+
+# Unrelated project files that live in this folder
+ledger_work/
+output/
+outputs/
+photo_archive_indexes/
+last_year_photos/
+current_report_photos/
+report_images/
+research_extracts/
+source_docs/
+source_previews/
+heic_support/
+.heic_support/
+asi_form_report_assets/
+qa_asi_form_report*/
+*.py
+/*.png
+/*.heic

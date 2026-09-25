@@ -118,3 +118,48 @@ export async function fsGetFirstPageCover(uid, notebookId) {
   const imgEl = elements.find(e => e.type === 'image' && e.data?.thumbnailUrl)
   return imgEl?.data?.thumbnailUrl ?? null
 }
+
+// ── Public share (public_notebooks collection) ─────────────────────────────
+
+export async function fsPublishShare(uid, notebookId, sharePin = null) {
+  const [notebooks, pages] = await Promise.all([
+    fsLoadNotebooks(uid),
+    fsLoadPages(uid, notebookId),
+  ])
+  const notebook = notebooks.find(n => n.id === notebookId)
+  if (!notebook) throw new Error('Notebook not found')
+
+  const pagesWithElements = await Promise.all(
+    pages.map(async page => {
+      const elements = await fsLoadElements(uid, page.id)
+      return { ...page, elements }
+    })
+  )
+
+  const snapshot = {
+    id: notebookId,
+    ownerId: uid,
+    name: notebook.name,
+    description: notebook.description ?? '',
+    theme: notebook.theme,
+    pageSize: notebook.pageSize,
+    coverPhotoUrl: notebook.coverPhotoUrl ?? null,
+    publishedAt: new Date().toISOString(),
+    sharePin: sharePin || null,
+    pages: pagesWithElements,
+  }
+
+  await setDoc(doc(firestoreDb, 'public_notebooks', notebookId), snapshot)
+  await fsUpdateNotebook(uid, notebookId, { isPublic: true, sharePublishedAt: snapshot.publishedAt })
+  return snapshot
+}
+
+export async function fsLoadPublicNotebook(notebookId) {
+  const snap = await getDoc(doc(firestoreDb, 'public_notebooks', notebookId))
+  return snap.exists() ? snap.data() : null
+}
+
+export async function fsUnpublishShare(uid, notebookId) {
+  await deleteDoc(doc(firestoreDb, 'public_notebooks', notebookId))
+  await fsUpdateNotebook(uid, notebookId, { isPublic: false, sharePublishedAt: null })
+}

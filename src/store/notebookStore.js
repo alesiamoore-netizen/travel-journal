@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import {
   fsLoadNotebooks, fsSaveNotebook, fsUpdateNotebook, fsDeleteNotebook,
+  fsLoadPages, fsSavePage, fsLoadElements, fsSaveElement,
 } from '../firebase/firestoreHelpers'
 
 export const useNotebookStore = create((set, get) => ({
@@ -60,5 +61,30 @@ export const useNotebookStore = create((set, get) => ({
     set((state) => ({
       notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, ...updated } : n)),
     }))
+  },
+
+  duplicate: async (notebookId) => {
+    const { uid } = get()
+    if (!uid) return null
+    const src = get().notebooks.find(n => n.id === notebookId)
+    if (!src) return null
+
+    const newId = crypto.randomUUID()
+    const now = new Date().toISOString()
+    const copy = { ...src, id: newId, name: `${src.name} (copy)`, createdAt: now, updatedAt: now, coverPhotoUrl: null, isPublic: false }
+    await fsSaveNotebook(uid, copy)
+
+    const pages = await fsLoadPages(uid, notebookId)
+    for (const page of pages) {
+      const newPageId = crypto.randomUUID()
+      await fsSavePage(uid, { ...page, id: newPageId, notebookId: newId })
+      const elements = await fsLoadElements(uid, page.id)
+      for (const el of elements) {
+        await fsSaveElement(uid, { ...el, id: crypto.randomUUID(), pageId: newPageId, notebookId: newId })
+      }
+    }
+
+    set((state) => ({ notebooks: [copy, ...state.notebooks] }))
+    return copy
   },
 }))

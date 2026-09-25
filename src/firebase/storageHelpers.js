@@ -2,17 +2,21 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { firebaseStorage } from './config'
 
 export async function uploadPhoto(blob, filename, uid, notebookId) {
-  const { generateThumbnail } = await import('../utils/thumbnail')
-  const thumbnailBlob = await generateThumbnail(blob, 400)
+  const { generateThumbnail, compressImage } = await import('../utils/thumbnail')
+  const [thumbnailBlob, compressedBlob] = await Promise.all([
+    generateThumbnail(blob, 400),
+    compressImage(blob, 1600),
+  ])
 
   const photoId = crypto.randomUUID()
-  const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+  const origBlob = compressedBlob ?? blob
+  const ext = 'jpg'
 
   const origRef = ref(firebaseStorage, `users/${uid}/photos/${photoId}.${ext}`)
   const thumbRef = ref(firebaseStorage, `users/${uid}/photos/${photoId}_thumb.jpg`)
 
   const [origSnap, thumbSnap] = await Promise.all([
-    uploadBytes(origRef, blob, { contentType: blob.type }),
+    uploadBytes(origRef, origBlob, { contentType: 'image/jpeg' }),
     uploadBytes(thumbRef, thumbnailBlob, { contentType: 'image/jpeg' }),
   ])
 

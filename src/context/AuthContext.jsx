@@ -9,12 +9,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined) // undefined = still loading
   const setNotebookUid = useNotebookStore(s => s.setUid)
   const setEditorUid = useEditorStore(s => s.setUid)
+  const setPresenceUser = useEditorStore(s => s.setPresenceUser)
 
   useEffect(() => {
     const unsub = onUserChanged(u => {
       setUser(u)
       setNotebookUid(u?.uid ?? null)
       setEditorUid(u?.uid ?? null)
+      setPresenceUser(u ?? null)
     })
     return unsub
   }, [])

@@ -22,6 +22,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         runtimeCaching: [
           {
@@ -53,5 +54,18 @@ export default defineConfig({
   ],
   server: {
     port: parseInt(process.env.PORT) || 5173,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('firebase')) return 'firebase'
+          if (id.includes('leaflet') || id.includes('react-leaflet')) return 'leaflet'
+          if (id.includes('@tiptap') || id.includes('@prosemirror')) return 'tiptap'
+          if (id.includes('react-grid-layout') || id.includes('react-resizable')) return 'grid'
+          if (id.includes('jspdf') || id.includes('html2canvas')) return 'pdf'
+        },
+      },
+    },
   },
 })

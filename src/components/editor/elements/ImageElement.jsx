@@ -3,6 +3,7 @@ import { useEditorStore } from '../../../store/editorStore'
 import { useAuth } from '../../../context/AuthContext'
 import { uploadPhoto } from '../../../firebase/storageHelpers'
 import { fsSavePhoto } from '../../../firebase/firestoreHelpers'
+import { useMobile } from '../../../hooks/useMobile'
 
 const FILTERS = {
   none:       '',
@@ -46,6 +47,8 @@ export default function ImageElement({ element }) {
   const { data } = element
   const { notebook, updateElement } = useEditorStore()
   const { user } = useAuth()
+  const isMobile = useMobile()
+  const fileInputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [urlInput, setUrlInput] = useState('')
   const [fetchStatus, setFetchStatus] = useState('idle')
@@ -103,10 +106,16 @@ export default function ImageElement({ element }) {
     }
   }
 
+  const handleFileInput = async (e) => {
+    const file = e.target.files?.[0]
+    if (file && file.type.startsWith('image/')) await applyPhoto(file, file.name)
+    e.target.value = ''
+  }
+
   if (!src) {
     return (
       <div
-        className={`h-full w-full border-2 border-dashed flex flex-col items-center justify-center gap-2 text-stone-400 select-none transition-colors ${
+        className={`h-full w-full border-2 border-dashed flex flex-col items-center justify-center gap-2 text-stone-400 select-none transition-colors relative ${
           dragging ? 'border-amber-400 bg-amber-50' : uploading ? 'border-amber-300 bg-amber-50/50' : 'border-stone-300 bg-stone-100'
         }`}
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
@@ -115,8 +124,22 @@ export default function ImageElement({ element }) {
       >
         <span className="text-3xl">{uploading ? '⏳' : dragging ? '📥' : '🖼'}</span>
         <span className="text-xs font-medium">{uploading ? 'Uploading…' : dragging ? 'Drop image here' : 'Image block'}</span>
-        {!dragging && !uploading && <span className="text-xs opacity-60">Drag a photo or paste a URL</span>}
-        {!dragging && (
+        {!dragging && !uploading && (
+          isMobile ? (
+            <>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInput} />
+              <button
+                onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
+                className="mt-1 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-full shadow active:bg-amber-700 transition-colors"
+              >
+                Tap to add photo
+              </button>
+            </>
+          ) : (
+            <span className="text-xs opacity-60">Drag a photo or paste a URL</span>
+          )
+        )}
+        {!dragging && !isMobile && (
           <div className="absolute bottom-0 left-0 right-0 p-1.5 flex gap-1" onClick={e => e.stopPropagation()}>
             <input
               type="url"
@@ -147,55 +170,83 @@ export default function ImageElement({ element }) {
 
   return (
     <div
-      className="h-full w-full relative"
-      style={{ overflow: clipStyle.clipPath ? 'visible' : 'hidden', ...clipStyle }}
+      className="h-full w-full flex flex-col"
       onDragOver={e => { e.preventDefault(); setDragging(true) }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
     >
-      {dragging && (
-        <div className="absolute inset-0 z-30 bg-amber-500/30 flex items-center justify-center pointer-events-none">
-          <span className="text-white text-sm font-medium bg-amber-600/80 px-3 py-1.5 rounded-full">Drop to replace</span>
-        </div>
-      )}
-      <img
-        src={src}
-        alt={data.caption || ''}
-        className="w-full h-full"
-        style={{ objectFit: data.fit ?? 'cover', filter: cssFilter }}
-        draggable={false}
-      />
+      {/* Image area */}
+      <div
+        className="relative flex-1 min-h-0 overflow-hidden"
+        style={clipStyle}
+      >
+        {dragging && (
+          <div className="absolute inset-0 z-30 bg-amber-500/30 flex items-center justify-center pointer-events-none">
+            <span className="text-white text-sm font-medium bg-amber-600/80 px-3 py-1.5 rounded-full">Drop to replace</span>
+          </div>
+        )}
+        <img
+          src={src}
+          alt={data.caption || ''}
+          className="w-full h-full"
+          style={{ objectFit: data.fit ?? 'cover', filter: cssFilter }}
+          draggable={false}
+        />
 
-      {/* Border overlays */}
-      {data.borderStyle === 'line'   && <div className="absolute inset-3 border border-white/80 pointer-events-none" />}
-      {data.borderStyle === 'thick'  && <div className="absolute inset-3 border-4 border-white pointer-events-none" />}
-      {data.borderStyle === 'shadow' && <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 50px rgba(0,0,0,0.35)' }} />}
-      {data.borderStyle === 'double' && <div className="absolute inset-2 border-2 border-white/70 pointer-events-none" />}
-      {data.borderStyle === 'dark'   && <div className="absolute inset-3 border border-stone-900/60 pointer-events-none" />}
+        {/* Border overlays */}
+        {data.borderStyle === 'line'   && <div className="absolute inset-3 border border-white/80 pointer-events-none" />}
+        {data.borderStyle === 'thick'  && <div className="absolute inset-3 border-4 border-white pointer-events-none" />}
+        {data.borderStyle === 'shadow' && <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 50px rgba(0,0,0,0.35)' }} />}
+        {data.borderStyle === 'double' && <div className="absolute inset-2 border-2 border-white/70 pointer-events-none" />}
+        {data.borderStyle === 'dark'   && <div className="absolute inset-3 border border-stone-900/60 pointer-events-none" />}
 
-      {/* Bottom caption bar */}
-      {data.caption && !data.overlayText && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-2 py-1.5 text-center leading-snug pointer-events-none">
-          {data.caption}
-        </div>
-      )}
-
-      {/* Overlay text */}
-      {data.overlayText && (
-        <div
-          className={`absolute ${overlayPos} pointer-events-none`}
-          style={{ padding: '8% 10%' }}
-        >
-          <span
-            className="text-white font-bold leading-tight block"
+        {/* Overlay caption */}
+        {data.caption && data.captionStyle === 'overlay' && (
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-black/50 italic leading-snug pointer-events-none px-2 py-1.5"
             style={{
-              fontSize: 'clamp(10px, 3cqw, 22px)',
-              textShadow: '0 1px 6px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4)',
-              fontFamily: 'Georgia, serif',
+              fontSize: '0.65rem',
+              color: data.captionColor ?? '#ffffff',
+              fontFamily: data.captionFont || 'Georgia',
+              textAlign: data.captionAlign ?? 'center',
             }}
           >
-            {data.overlayText}
-          </span>
+            {data.caption}
+          </div>
+        )}
+
+        {/* Overlay text */}
+        {data.overlayText && (
+          <div
+            className={`absolute ${overlayPos} pointer-events-none`}
+            style={{ padding: '8% 10%' }}
+          >
+            <span
+              className="text-white font-bold leading-tight block"
+              style={{
+                fontSize: 'clamp(10px, 3cqw, 22px)',
+                textShadow: '0 1px 6px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4)',
+                fontFamily: 'Georgia, serif',
+              }}
+            >
+              {data.overlayText}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Below-photo caption */}
+      {data.caption && data.captionStyle !== 'overlay' && (
+        <div
+          className="flex-shrink-0 italic px-2 py-1 leading-snug pointer-events-none"
+          style={{
+            fontSize: '0.65rem',
+            color: data.captionColor ?? '#888888',
+            fontFamily: data.captionFont || 'Georgia',
+            textAlign: data.captionAlign ?? 'center',
+          }}
+        >
+          {data.caption}
         </div>
       )}
     </div>

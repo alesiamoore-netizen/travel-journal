@@ -65,4 +65,34 @@ export const THEME_PRESETS = [
     backgroundColor: '#18181b', backgroundTexture: null,
     fontHeading: 'Raleway', fontBody: 'Nunito',
   },
+  {
+    id: 'coastal', label: 'Coastal',
+    accentColor: '#0ea5e9', accentColorSecondary: '#0284c7',
+    backgroundColor: '#fefce8', backgroundTexture: null,
+    fontHeading: 'Raleway', fontBody: 'Nunito',
+  },
+  {
+    id: 'alpine', label: 'Alpine',
+    accentColor: '#15803d', accentColorSecondary: '#166534',
+    backgroundColor: '#fefdf8', backgroundTexture: 'linen',
+    fontHeading: 'Merriweather', fontBody: 'Lora',
+  },
+  {
+    id: 'tropical', label: 'Tropical',
+    accentColor: '#f97316', accentColorSecondary: '#0d9488',
+    backgroundColor: '#fff7ed', backgroundTexture: null,
+    fontHeading: 'Dancing Script', fontBody: 'Nunito',
+  },
+  {
+    id: 'desert', label: 'Desert',
+    accentColor: '#c2410c', accentColorSecondary: '#92400e',
+    backgroundColor: '#fef3c7', backgroundTexture: 'grain',
+    fontHeading: 'EB Garamond', fontBody: 'EB Garamond',
+  },
+  {
+    id: 'nordic', label: 'Nordic',
+    accentColor: '#3b82f6', accentColorSecondary: '#6366f1',
+    backgroundColor: '#f0f4ff', backgroundTexture: 'dots',
+    fontHeading: 'Montserrat', fontBody: 'Montserrat',
+  },
 ]

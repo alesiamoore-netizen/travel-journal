@@ -51,6 +51,17 @@ export const LAYOUTS = [
       { type: 'text', grid: { x: 1, y: 1, w: 10, h: 14 } },
     ],
   },
+  {
+    id: 'chapter-divider',
+    name: 'Chapter Divider',
+    category: 'Basic',
+    elements: [
+      { type: 'divider', grid: { x: 2, y: 5,  w: 8,  h: 1  }, data: { style: 'ornate', color: 'accent' } },
+      { type: 'text',    grid: { x: 1, y: 6,  w: 10, h: 4  }, data: { textStyle: 'heading', fontSize: 36, color: '#1a1a1a' } },
+      { type: 'text',    grid: { x: 2, y: 10, w: 8,  h: 2  }, data: { textStyle: 'dateline', fontSize: 11, color: '#c0813a' } },
+      { type: 'divider', grid: { x: 2, y: 12, w: 8,  h: 1  }, data: { style: 'ornate', color: 'accent' } },
+    ],
+  },
 
   // ─── EDITORIAL ─────────────────────────────────────────────
   {
@@ -143,6 +154,79 @@ export const LAYOUTS = [
     elements: [
       { type: 'text',  grid: { x: 1, y: 1, w: 10, h: 8 } },
       { type: 'image', grid: { x: 0, y: 9, w: 12, h: 7 } },
+    ],
+  },
+  {
+    id: 'text-three-photos-bottom',
+    name: 'Story + 3 Photos',
+    category: 'Editorial',
+    elements: [
+      { type: 'text',  grid: { x: 1, y: 0, w: 10, h: 9 } },
+      { type: 'image', grid: { x: 0, y: 9, w: 4,  h: 7 } },
+      { type: 'image', grid: { x: 4, y: 9, w: 4,  h: 7 } },
+      { type: 'image', grid: { x: 8, y: 9, w: 4,  h: 7 } },
+    ],
+  },
+  {
+    id: 'text-two-photos-bottom',
+    name: 'Story + 2 Photos',
+    category: 'Editorial',
+    elements: [
+      { type: 'text',  grid: { x: 1, y: 0, w: 10, h: 9  } },
+      { type: 'image', grid: { x: 0, y: 9, w: 6,  h: 7  } },
+      { type: 'image', grid: { x: 6, y: 9, w: 6,  h: 7  } },
+    ],
+  },
+  {
+    id: 'heading-two-col',
+    name: 'Heading + 2 Columns',
+    category: 'Editorial',
+    elements: [
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 3  }, data: { textStyle: 'heading', fontSize: 30, color: '#1a1a1a' } },
+      { type: 'text', grid: { x: 0, y: 3, w: 6,  h: 13 }, data: { textStyle: 'body', fontSize: 14 } },
+      { type: 'text', grid: { x: 6, y: 3, w: 6,  h: 13 }, data: { textStyle: 'body', fontSize: 14 } },
+    ],
+  },
+  {
+    id: 'two-col-photo-below',
+    name: '2 Columns + Photo',
+    category: 'Editorial',
+    elements: [
+      { type: 'text',  grid: { x: 0, y: 0, w: 6,  h: 9 }, data: { textStyle: 'body', fontSize: 14 } },
+      { type: 'text',  grid: { x: 6, y: 0, w: 6,  h: 9 }, data: { textStyle: 'body', fontSize: 14 } },
+      { type: 'image', grid: { x: 0, y: 9, w: 12, h: 7 } },
+    ],
+  },
+  {
+    id: 'text-wide-photo-col',
+    name: 'Story + Photo Side',
+    category: 'Editorial',
+    elements: [
+      { type: 'text',  grid: { x: 0, y: 0, w: 7, h: 16 }, data: { textStyle: 'body', fontSize: 14 } },
+      { type: 'image', grid: { x: 7, y: 0, w: 5, h: 16 } },
+    ],
+  },
+  {
+    id: 'day-three-photos',
+    name: 'Day + 3 Photos',
+    category: 'Editorial',
+    elements: [
+      { type: 'text',  grid: { x: 0, y: 0,  w: 12, h: 2  }, data: { textStyle: 'dateline', fontSize: 11, color: '#c0813a' } },
+      { type: 'image', grid: { x: 0, y: 2,  w: 4,  h: 6  } },
+      { type: 'image', grid: { x: 4, y: 2,  w: 4,  h: 6  } },
+      { type: 'image', grid: { x: 8, y: 2,  w: 4,  h: 6  } },
+      { type: 'text',  grid: { x: 1, y: 8,  w: 10, h: 8  }, data: { textStyle: 'body', fontSize: 14 } },
+    ],
+  },
+  {
+    id: 'photo-inset-story',
+    name: 'Story + Photo Inset',
+    category: 'Editorial',
+    elements: [
+      { type: 'text',  grid: { x: 0, y: 0,  w: 12, h: 3  }, data: { textStyle: 'heading', fontSize: 28, color: '#1a1a1a' } },
+      { type: 'image', grid: { x: 7, y: 3,  w: 5,  h: 6  } },
+      { type: 'text',  grid: { x: 0, y: 3,  w: 7,  h: 12 }, data: { textStyle: 'body', fontSize: 14 } },
+      { type: 'text',  grid: { x: 7, y: 9,  w: 5,  h: 7  }, data: { textStyle: 'body', fontSize: 14 } },
     ],
   },
 
@@ -244,6 +328,97 @@ export const LAYOUTS = [
     ],
   },
 
+  // ─── GRID (photo combination additions) ───────────────────
+  {
+    id: 'large-three-strip',
+    name: 'Feature + 3 Strip',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0, w: 12, h: 10 } },
+      { type: 'image', grid: { x: 0, y: 10, w: 4, h: 6  } },
+      { type: 'image', grid: { x: 4, y: 10, w: 4, h: 6  } },
+      { type: 'image', grid: { x: 8, y: 10, w: 4, h: 6  } },
+    ],
+  },
+  {
+    id: 'three-across-caption',
+    name: '3 Portrait + Caption',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0, w: 4,  h: 13 } },
+      { type: 'image', grid: { x: 4, y: 0, w: 4,  h: 13 } },
+      { type: 'image', grid: { x: 8, y: 0, w: 4,  h: 13 } },
+      { type: 'text',  grid: { x: 1, y: 13, w: 10, h: 3 }, data: { textStyle: 'caption', fontSize: 10, color: '#888888' } },
+    ],
+  },
+  {
+    id: 'five-mosaic-v2',
+    name: 'Five Photos',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0,  w: 4, h: 7 } },
+      { type: 'image', grid: { x: 4, y: 0,  w: 4, h: 7 } },
+      { type: 'image', grid: { x: 8, y: 0,  w: 4, h: 7 } },
+      { type: 'image', grid: { x: 0, y: 7,  w: 6, h: 9 } },
+      { type: 'image', grid: { x: 6, y: 7,  w: 6, h: 9 } },
+    ],
+  },
+  {
+    id: 'feature-left-strip',
+    name: 'Feature + Right Strip',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0, w: 7, h: 16 } },
+      { type: 'image', grid: { x: 7, y: 0, w: 5, h: 5  } },
+      { type: 'image', grid: { x: 7, y: 5, w: 5, h: 5  } },
+      { type: 'image', grid: { x: 7, y: 10, w: 5, h: 6 } },
+    ],
+  },
+  {
+    id: 'pair-text',
+    name: 'Photo Pair + Caption',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0,  w: 6, h: 12 } },
+      { type: 'image', grid: { x: 6, y: 0,  w: 6, h: 12 } },
+      { type: 'text',  grid: { x: 1, y: 12, w: 10, h: 4 }, data: { textStyle: 'caption', fontSize: 10, color: '#888888' } },
+    ],
+  },
+  {
+    id: 'stagger-four',
+    name: 'Staggered Four',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0,  w: 7, h: 8 } },
+      { type: 'image', grid: { x: 7, y: 0,  w: 5, h: 5 } },
+      { type: 'image', grid: { x: 7, y: 5,  w: 5, h: 5 } },
+      { type: 'image', grid: { x: 0, y: 8,  w: 7, h: 8 } },
+    ],
+  },
+  {
+    id: 'four-landscape',
+    name: 'Four Landscape',
+    category: 'Grid',
+    elements: [
+      { type: 'image', grid: { x: 0, y: 0,  w: 12, h: 4 } },
+      { type: 'image', grid: { x: 0, y: 4,  w: 12, h: 4 } },
+      { type: 'image', grid: { x: 0, y: 8,  w: 12, h: 4 } },
+      { type: 'image', grid: { x: 0, y: 12, w: 12, h: 4 } },
+    ],
+  },
+  {
+    id: 'banner-trio',
+    name: 'Banner + Trio',
+    category: 'Grid',
+    elements: [
+      { type: 'text',  grid: { x: 0, y: 0,  w: 12, h: 2  }, data: { textStyle: 'dateline', fontSize: 11, color: '#c0813a' } },
+      { type: 'image', grid: { x: 0, y: 2,  w: 12, h: 7  } },
+      { type: 'image', grid: { x: 0, y: 9,  w: 4,  h: 7  } },
+      { type: 'image', grid: { x: 4, y: 9,  w: 4,  h: 7  } },
+      { type: 'image', grid: { x: 8, y: 9,  w: 4,  h: 7  } },
+    ],
+  },
+
   // ─── GRID (square-format additions) ────────────────────────
   {
     id: 'square-2x2',
@@ -340,6 +515,27 @@ export const LAYOUTS = [
     elements: [
       { type: 'text',  grid: { x: 1, y: 1, w: 10, h: 7 }, data: { textStyle: 'pullquote', fontSize: 26, color: '#3a3a3a' } },
       { type: 'image', grid: { x: 0, y: 8, w: 12, h: 8 } },
+    ],
+  },
+  {
+    id: 'pull-quote-story',
+    name: 'Pull Quote + Story',
+    category: 'Text',
+    elements: [
+      { type: 'text', grid: { x: 1, y: 0, w: 10, h: 5  }, data: { textStyle: 'pullquote', fontSize: 22, color: '#c0813a' } },
+      { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 } },
+      { type: 'text', grid: { x: 1, y: 6, w: 10, h: 10 }, data: { textStyle: 'body', fontSize: 14 } },
+    ],
+  },
+  {
+    id: 'dear-diary',
+    name: 'Dear Diary',
+    category: 'Text',
+    elements: [
+      { type: 'text', grid: { x: 1, y: 0,  w: 10, h: 2  }, data: { textStyle: 'dateline', fontSize: 11, color: '#c0813a' } },
+      { type: 'text', grid: { x: 1, y: 2,  w: 10, h: 3  }, data: { textStyle: 'heading', fontSize: 30, color: '#1a1a1a' } },
+      { type: 'text', grid: { x: 0, y: 5,  w: 6,  h: 11 }, data: { textStyle: 'body', fontSize: 14 } },
+      { type: 'text', grid: { x: 6, y: 5,  w: 6,  h: 11 }, data: { textStyle: 'body', fontSize: 14 } },
     ],
   },
 

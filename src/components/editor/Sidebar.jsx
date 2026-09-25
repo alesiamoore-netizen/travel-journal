@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { useAuth } from '../../context/AuthContext'
-import { fsLoadPhotos } from '../../firebase/firestoreHelpers'
+import { fsLoadPhotos, fsLoadElements } from '../../firebase/firestoreHelpers'
+import { subscribePresence } from '../../firebase/collab'
 import LayoutPicker from './LayoutPicker'
 
 function PhotoLibrary({ notebookId, onUse }) {
@@ -77,11 +78,31 @@ function PageThumb({ elements, accent }) {
 }
 
 export default function Sidebar() {
-  const { pages, currentPageId, notebook, switchPage, addPage, deletePage, movePage, duplicatePage, addElement, elements, selectedId, updateElement } = useEditorStore()
+  const { pages, currentPageId, notebook, switchPage, addPage, insertPageAfter, deletePage, movePage, reorderPages, duplicatePage, addElement, elements, selectedId, updateElement, uid } = useEditorStore()
+  const { user } = useAuth()
   const [showLayouts, setShowLayouts] = useState(false)
   const [pageElements, setPageElements] = useState({})
   const [sideTab, setSideTab] = useState('pages') // 'pages' | 'photos'
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQ, setSearchQ] = useState('')
+  const [dragId, setDragId] = useState(null)
+  const [dragOverId, setDragOverId] = useState(null)
+  const [presence, setPresence] = useState({}) // uid -> { displayName, photoURL, currentPageId }
   const accent = notebook?.theme?.accentColor ?? '#c0813a'
+
+  // Subscribe to presence when notebook is loaded
+  useEffect(() => {
+    if (!notebook?.id) return
+    return subscribePresence(notebook.id, setPresence)
+  }, [notebook?.id])
+
+  const filteredPages = searchQ.trim()
+    ? pages.filter(p =>
+        (p.title ?? '').toLowerCase().includes(searchQ.toLowerCase()) ||
+        (p.location ?? '').toLowerCase().includes(searchQ.toLowerCase()) ||
+        (p.date ?? '').includes(searchQ)
+      )
+    : pages
 
   const handlePhotoUse = (photo) => {
     const photoData = { photoId: photo.id, storageUrl: photo.storageUrl, thumbnailUrl: photo.thumbnailUrl }
@@ -95,13 +116,13 @@ export default function Sidebar() {
     }
   }
 
-  // Load elements for all pages to show thumbnails
+  // Load elements for page thumbnails
   useEffect(() => {
-    if (!pages.length) return
+    if (!pages.length || !uid) return
     const missing = pages.filter(p => !(p.id in pageElements))
     if (!missing.length) return
     Promise.all(
-      missing.map(p => db.pageElements.where('pageId').equals(p.id).toArray().then(els => ({ id: p.id, els })))
+      missing.map(p => fsLoadElements(uid, p.id).then(els => ({ id: p.id, els })))
     ).then(results => {
       setPageElements(prev => {
         const next = { ...prev }
@@ -109,15 +130,15 @@ export default function Sidebar() {
         return next
       })
     })
-  }, [pages])
+  }, [pages, uid])
 
   // Refresh current page thumbnail when switching pages
   useEffect(() => {
-    if (!currentPageId) return
-    db.pageElements.where('pageId').equals(currentPageId).toArray().then(els => {
+    if (!currentPageId || !uid) return
+    fsLoadElements(uid, currentPageId).then(els => {
       setPageElements(prev => ({ ...prev, [currentPageId]: els }))
     })
-  }, [currentPageId])
+  }, [currentPageId, uid])
 
   return (
     <aside className="w-48 bg-white border-r border-stone-200 flex flex-col flex-shrink-0 overflow-hidden">
@@ -154,13 +175,22 @@ export default function Sidebar() {
           Photos
         </button>
         {sideTab === 'pages' && (
-          <button
-            onClick={addPage}
-            className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 text-lg leading-none flex-shrink-0"
-            title="Add page"
-          >
-            +
-          </button>
+          <>
+            <button
+              onClick={() => { setSearchOpen(v => !v); setSearchQ('') }}
+              className={`w-8 h-8 flex items-center justify-center text-xs hover:bg-stone-100 flex-shrink-0 transition-colors ${searchOpen ? 'text-amber-700' : 'text-stone-400 hover:text-stone-700'}`}
+              title="Search pages"
+            >
+              🔍
+            </button>
+            <button
+              onClick={() => insertPageAfter(currentPageId)}
+              className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 text-lg leading-none flex-shrink-0"
+              title="Insert page after current"
+            >
+              +
+            </button>
+          </>
         )}
       </div>
 
@@ -174,17 +204,52 @@ export default function Sidebar() {
         </div>
       )}
 
+      {/* Search input */}
+      {sideTab === 'pages' && searchOpen && (
+        <div className="px-2 py-1.5 border-b border-stone-100 flex-shrink-0">
+          <input
+            autoFocus
+            type="text"
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            placeholder="Search pages…"
+            className="w-full border border-stone-200 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
+          {searchQ && filteredPages.length === 0 && (
+            <p className="text-[10px] text-stone-400 mt-1 px-1">No pages match</p>
+          )}
+        </div>
+      )}
+
       {/* Page list */}
       {sideTab === 'pages' && <div className="flex-1 overflow-y-auto py-2 space-y-1 px-2 min-h-0">
-        {pages.map((page, i) => {
+        {filteredPages.map((page) => {
+          const i = pages.indexOf(page)
           const isActive = currentPageId === page.id
           const els = pageElements[page.id] ?? []
+          const isDragging = dragId === page.id
+          const isDragOver = dragOverId === page.id && dragId !== page.id
+          const viewers = Object.values(presence).filter(p => p.currentPageId === page.id && p.uid !== user?.uid)
           return (
             <div
               key={page.id}
-              className={`group relative flex items-center gap-2.5 px-2 py-2 rounded-lg cursor-pointer transition-colors ${
+              draggable
+              onDragStart={() => setDragId(page.id)}
+              onDragEnd={() => { setDragId(null); setDragOverId(null) }}
+              onDragOver={e => { e.preventDefault(); setDragOverId(page.id) }}
+              onDrop={() => {
+                if (!dragId || dragId === page.id) return
+                const src = pages.findIndex(p => p.id === dragId)
+                const dst = pages.findIndex(p => p.id === page.id)
+                const reordered = [...pages]
+                const [removed] = reordered.splice(src, 1)
+                reordered.splice(dst, 0, removed)
+                reorderPages(reordered)
+                setDragId(null); setDragOverId(null)
+              }}
+              className={`group relative flex items-center gap-2.5 px-2 py-2 rounded-lg cursor-pointer transition-all ${
                 isActive ? 'bg-amber-50 ring-1 ring-amber-200' : 'hover:bg-stone-50'
-              }`}
+              } ${isDragging ? 'opacity-40' : ''} ${isDragOver ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
               onClick={() => switchPage(page.id)}
             >
               {/* Page number badge */}
@@ -196,8 +261,26 @@ export default function Sidebar() {
                 {i + 1}
               </div>
               {/* Thumbnail */}
-              <div className={`rounded overflow-hidden shadow-sm flex-shrink-0 border ${isActive ? 'border-amber-300' : 'border-stone-200'}`}>
+              <div className={`rounded overflow-hidden shadow-sm flex-shrink-0 border ${isActive ? 'border-amber-300' : 'border-stone-200'} relative`}>
                 <PageThumb elements={els} accent={accent} />
+                {/* Presence avatars */}
+                {viewers.length > 0 && (
+                  <div className="absolute bottom-0.5 right-0.5 flex -space-x-1">
+                    {viewers.slice(0, 3).map(v => (
+                      <div key={v.uid} title={v.displayName || 'Collaborator'}
+                        className="w-4 h-4 rounded-full border border-white overflow-hidden flex-shrink-0"
+                        style={{ backgroundColor: '#c0813a' }}
+                      >
+                        {v.photoURL
+                          ? <img src={v.photoURL} alt="" className="w-full h-full object-cover" />
+                          : <span className="text-white text-[7px] flex items-center justify-center h-full font-bold">
+                              {(v.displayName?.[0] ?? '?').toUpperCase()}
+                            </span>
+                        }
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {/* Title */}
               <div className="flex-1 min-w-0">
@@ -219,6 +302,11 @@ export default function Sidebar() {
                   onClick={e => { e.stopPropagation(); movePage(page.id, 1) }}
                   title="Move down"
                 >▼</button>
+                <button
+                  className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-amber-600 text-[10px] leading-none"
+                  onClick={e => { e.stopPropagation(); insertPageAfter(page.id) }}
+                  title="Insert page after"
+                >+</button>
                 <button
                   className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-amber-600 text-[10px] leading-none"
                   onClick={e => { e.stopPropagation(); duplicatePage(page.id) }}
@@ -278,6 +366,41 @@ export default function Sidebar() {
             >
               <span className="text-sm">✦</span>
               <span className="text-xs font-medium">Sticker</span>
+            </button>
+            <button
+              onClick={() => addElement('keepsake')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
+            >
+              <span className="text-sm">✂</span>
+              <span className="text-xs font-medium">Keepsake Box</span>
+            </button>
+            <button
+              onClick={() => addElement('weather')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
+            >
+              <span className="text-sm">🌤️</span>
+              <span className="text-xs font-medium">Weather</span>
+            </button>
+            <button
+              onClick={() => addElement('collage')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
+            >
+              <span className="text-sm">⊞</span>
+              <span className="text-xs font-medium">Collage</span>
+            </button>
+            <button
+              onClick={() => addElement('drawing')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
+            >
+              <span className="text-sm">✏️</span>
+              <span className="text-xs font-medium">Drawing</span>
+            </button>
+            <button
+              onClick={() => addElement('cover')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
+            >
+              <span className="text-sm">🌅</span>
+              <span className="text-xs font-medium">Cover Block</span>
             </button>
           </div>
         </div>
