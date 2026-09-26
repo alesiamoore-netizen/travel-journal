@@ -17,6 +17,10 @@ export default function CoverElement({ element }) {
   const titleColor = data.titleColor ?? '#ffffff'
   const subtitleColor = data.subtitleColor ?? '#ffffffcc'
   const titleAlign = data.titleAlign ?? 'center'
+  // Empty-state placeholder is theme-tinted (not flat gray) so it reads as "this theme's
+  // unfilled cover" and gives pale/cream decorative elements (stickers etc.) placed on top
+  // of it enough contrast to actually be visible before a photo is added.
+  const emptyAccent = notebook?.theme?.accentColor ?? '#8a8478'
 
   const handleFile = async (e) => {
     const file = e.target.files[0]
@@ -36,11 +40,12 @@ export default function CoverElement({ element }) {
         <img src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
       ) : (
         <button
-          className="absolute inset-0 bg-stone-200 flex flex-col items-center justify-center gap-2 text-stone-400 hover:bg-stone-300 transition-colors"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white hover:brightness-95 transition-all"
+          style={{ background: `linear-gradient(160deg, ${emptyAccent}, ${emptyAccent}cc)` }}
           onClick={e => { e.stopPropagation(); fileRef.current?.click() }}
         >
-          <span className="text-4xl">🌅</span>
-          <span className="text-xs">Click to add cover photo</span>
+          <span className="text-4xl drop-shadow">🌅</span>
+          <span className="text-xs font-medium drop-shadow">Click to add cover photo</span>
         </button>
       )}
 

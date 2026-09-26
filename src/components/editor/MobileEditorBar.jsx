@@ -117,16 +117,23 @@ function PagesDrawer({ onClose }) {
 const COLS = 12, ROWS = 16, SW = 52, SH = 70
 const TYPE_COLOR = { image: '#c0813a55', text: '#d6d3d1', map: '#8db4a044' }
 
-function LayoutThumb({ elements }) {
+function LayoutThumb({ elements, theme }) {
+  const themeColor = (type) => {
+    if (type === 'image' || type === 'cover') return `${theme.accentColor}66`
+    if (type === 'text') return `${theme.accentColor}18`
+    if (type === 'map') return `${theme?.tokens?.mapRoute ?? theme.accentColor}55`
+    if (type === 'divider' || type === 'sticker') return `${theme.accentColorSecondary}88`
+    return `${theme.accentColor}33`
+  }
   return (
     <svg viewBox={`0 0 ${SW} ${SH}`} className="w-full h-full">
-      <rect width={SW} height={SH} fill="#fafaf9" />
+      <rect width={SW} height={SH} fill={theme?.backgroundColor ?? '#fafaf9'} />
       {elements.map((el, i) => {
         const x = (el.grid.x / COLS) * SW + 0.4
         const y = (el.grid.y / ROWS) * SH + 0.4
         const w = (el.grid.w / COLS) * SW - 0.8
         const h = (el.grid.h / ROWS) * SH - 0.8
-        return <rect key={i} x={x} y={y} width={w} height={h} fill={TYPE_COLOR[el.type] ?? '#e5e0d8'} rx="1" />
+        return <rect key={i} x={x} y={y} width={w} height={h} fill={theme ? themeColor(el.type) : (TYPE_COLOR[el.type] ?? '#e5e0d8')} rx="1" />
       })}
       {elements.length === 0 && (
         <text x={SW/2} y={SH/2+3} textAnchor="middle" fontSize="7" fill="#c4c0bb">Blank</text>
@@ -182,7 +189,7 @@ function LayoutsDrawer({ onClose }) {
                 {items.map(layout => (
                   <button key={layout.id} onClick={() => handlePick(layout)} className="flex flex-col items-center gap-1.5 group">
                     <div className="w-full rounded-lg overflow-hidden border border-stone-200 group-active:border-amber-400 transition-colors aspect-[52/70]">
-                      <LayoutThumb elements={layout.elements} />
+                      <LayoutThumb elements={layout.elements} theme={theme} />
                     </div>
                     <span className="text-[10px] text-stone-500 text-center leading-tight">{layout.name}</span>
                   </button>

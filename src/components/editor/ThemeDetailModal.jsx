@@ -101,7 +101,7 @@ function Swatch({ color, label }) {
   )
 }
 
-function ThemeDetail({ theme, onClose, onApplied }) {
+function ThemeDetail({ theme, onClose, onApplied, onSelect }) {
   const { notebook, uid, applyLayout, changeJournalTheme, restyleDryRun } = useEditorStore()
   const { user } = useAuth()
   const hasContent = !!(theme.covers?.length || theme.layouts?.length)
@@ -196,9 +196,9 @@ function ThemeDetail({ theme, onClose, onApplied }) {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => { applyLayout({ elements: resolveThemedElements(item.elements, theme, item.id, level).map(e => ({ ...e })) }); onClose() }}
-                      className="flex flex-col items-center gap-1.5 group"
-                      title={`Apply "${item.name}" to the current page`}
+                      onClick={onSelect ? undefined : () => { applyLayout({ elements: resolveThemedElements(item.elements, theme, item.id, level).map(e => ({ ...e })) }); onClose() }}
+                      className={`flex flex-col items-center gap-1.5 group ${onSelect ? 'cursor-default' : ''}`}
+                      title={onSelect ? item.name : `Apply "${item.name}" to the current page`}
                     >
                       <div className="w-full aspect-[3/4] rounded-lg overflow-hidden border-2 border-stone-200 group-hover:shadow-md transition-shadow" style={{ borderColor: undefined }}>
                         <ThemedThumb elements={resolved} theme={theme} photos={photos} seed={gi * 4 + ii} />
@@ -214,7 +214,14 @@ function ThemeDetail({ theme, onClose, onApplied }) {
       )}
 
       <div className="pt-3 border-t border-stone-100 space-y-2">
-        {stage === 'detail' && (
+        {onSelect ? (
+          <button onClick={() => onSelect(theme)}
+            className="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition-colors"
+            style={{ backgroundColor: theme.accentColor }}
+          >
+            Select This Theme
+          </button>
+        ) : stage === 'detail' && (
           <>
             <button onClick={applyPreserveOnly}
               className="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition-colors"
@@ -263,7 +270,7 @@ function ThemeDetail({ theme, onClose, onApplied }) {
   )
 }
 
-export default function ThemeDetailModal({ onClose, initialThemeId }) {
+export default function ThemeDetailModal({ onClose, initialThemeId, onSelect }) {
   const [category, setCategory] = useState('Occasion')
   const [selected, setSelected] = useState(THEMES.find(t => t.id === initialThemeId) ?? null)
 
@@ -282,7 +289,12 @@ export default function ThemeDetailModal({ onClose, initialThemeId }) {
         </div>
 
         {selected ? (
-          <ThemeDetail theme={selected} onClose={() => setSelected(null)} onApplied={() => setTimeout(onClose, 700)} />
+          <ThemeDetail
+            theme={selected}
+            onClose={() => setSelected(null)}
+            onApplied={() => setTimeout(onClose, 700)}
+            onSelect={onSelect ? (t) => { onSelect(t); onClose() } : undefined}
+          />
         ) : (
           <div className="p-5 overflow-y-auto space-y-3">
             <div className="flex gap-1.5">

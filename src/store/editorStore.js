@@ -431,13 +431,19 @@ export const useEditorStore = create((set, get) => ({
     const { uid, currentPageId, notebook } = get()
     if (!uid) return null
     get()._saveUndo()
+    const data = defaultData(type)
+    // New stickers should pick up the journal's active theme color instead of the hardcoded
+    // default — only on creation, never overwriting a color the user later chooses themselves.
+    if (type === 'sticker' && notebook?.theme?.accentColor) {
+      data.color = notebook.theme.accentColor
+    }
     const element = {
       id: crypto.randomUUID(),
       pageId: currentPageId,
       notebookId: notebook.id,
       type,
       grid: defaultGrid(type),
-      data: defaultData(type),
+      data,
     }
     await get()._track(fsSaveElement(uid, element))
     set(s => ({ elements: [...s.elements, element], selectedId: element.id }))

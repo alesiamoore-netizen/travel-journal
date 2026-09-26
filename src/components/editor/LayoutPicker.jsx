@@ -9,7 +9,12 @@ const SW = 60
 const SH = 80
 const GAP = 0.8
 
-function LayoutThumbnail({ elements }) {
+function LayoutThumbnail({ elements, theme }) {
+  const accent = theme?.accentColor ?? '#c0813a'
+  const accent2 = theme?.accentColorSecondary ?? '#e8a96a'
+  const mapColor = theme?.tokens?.mapRoute ?? theme?.accentColor ?? '#8db4a0'
+  const lineColor = theme?.accentColorSecondary ?? '#c4c0bb'
+
   if (elements.length === 0) {
     return (
       <svg viewBox={`0 0 ${SW} ${SH}`} className="w-full h-full">
@@ -22,7 +27,7 @@ function LayoutThumbnail({ elements }) {
 
   return (
     <svg viewBox={`0 0 ${SW} ${SH}`} className="w-full h-full">
-      <rect x="0" y="0" width={SW} height={SH} fill="#fafaf9" />
+      <rect x="0" y="0" width={SW} height={SH} fill={theme?.backgroundColor ?? '#fafaf9'} />
       {elements.map((el, i) => {
         const x = (el.grid.x / COLS) * SW + GAP / 2
         const y = (el.grid.y / ROWS) * SH + GAP / 2
@@ -33,13 +38,13 @@ function LayoutThumbnail({ elements }) {
           const lineCount = Math.min(Math.floor(h / 5), 7)
           return (
             <g key={i}>
-              <rect x={x} y={y} width={w} height={h} fill="#f5f5f4" />
+              <rect x={x} y={y} width={w} height={h} fill={theme ? `${accent}0d` : '#f5f5f4'} />
               {Array.from({ length: lineCount }, (_, j) => (
                 <line
                   key={j}
                   x1={x + 2} y1={y + 4 + j * 5}
                   x2={j % 3 === 2 ? x + w * 0.55 : x + w - 2} y2={y + 4 + j * 5}
-                  stroke="#c4c0bb" strokeWidth="1.2" strokeLinecap="round"
+                  stroke={lineColor} strokeWidth="1.2" strokeLinecap="round" opacity={theme ? 0.7 : 1}
                 />
               ))}
             </g>
@@ -49,7 +54,7 @@ function LayoutThumbnail({ elements }) {
         if (el.type === 'map') {
           return (
             <g key={i}>
-              <rect x={x} y={y} width={w} height={h} fill="#8db4a0" />
+              <rect x={x} y={y} width={w} height={h} fill={mapColor} opacity={theme ? 0.5 : 1} />
               <polyline
                 points={`${x + 4},${y + h * 0.75} ${x + w * 0.3},${y + h * 0.45} ${x + w * 0.6},${y + h * 0.55} ${x + w - 4},${y + h * 0.2}`}
                 fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.65"
@@ -58,13 +63,21 @@ function LayoutThumbnail({ elements }) {
           )
         }
 
+        if (el.type === 'divider') {
+          return <line key={i} x1={x} y1={y + h / 2} x2={x + w} y2={y + h / 2} stroke={accent2} strokeWidth="1" opacity="0.8" />
+        }
+
+        if (el.type === 'sticker') {
+          return <circle key={i} cx={x + w / 2} cy={y + h / 2} r={Math.min(w, h) / 2.5} fill={accent2} opacity="0.55" />
+        }
+
         return (
           <g key={i}>
-            <rect x={x} y={y} width={w} height={h} fill="#c0813a" opacity="0.75" />
+            <rect x={x} y={y} width={w} height={h} fill={accent} opacity="0.75" />
             <rect
               x={x + w * 0.25} y={y + h * 0.2}
               width={w * 0.5} height={h * 0.6}
-              fill="#e8a96a" opacity="0.35" rx="1"
+              fill={accent2} opacity="0.35" rx="1"
             />
           </g>
         )
@@ -162,7 +175,7 @@ export default function LayoutPicker({ onClose }) {
                         className="flex flex-col items-center gap-2 group"
                       >
                         <div className="w-full aspect-[3/4] rounded-lg overflow-hidden border-2 border-stone-200 group-hover:border-amber-500 transition-colors shadow-sm group-hover:shadow-md">
-                          <LayoutThumbnail elements={layout.elements} />
+                          <LayoutThumbnail elements={layout.elements} theme={theme} />
                         </div>
                         <span className="text-xs text-stone-600 group-hover:text-amber-700 font-medium text-center leading-tight">
                           {layout.icon} {layout.name}

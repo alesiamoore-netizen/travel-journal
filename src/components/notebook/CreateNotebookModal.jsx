@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNotebookStore } from '../../store/notebookStore'
 import { THEMES, THEME_CATEGORIES } from '../../data/themes'
+import ThemeDetailModal from '../editor/ThemeDetailModal'
 
 const PAGE_SIZES = [
   { value: '8x10',   label: '8 × 10"',            desc: 'Portrait — standard photo book' },
@@ -18,6 +19,7 @@ export default function CreateNotebookModal({ onClose }) {
   const [themeCategory, setThemeCategory] = useState('Occasion')
   const [themeId, setThemeId] = useState('classic')
   const [saving, setSaving] = useState(false)
+  const [previewThemeId, setPreviewThemeId] = useState(null)
 
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0]
   const filteredThemes = THEMES.filter(t => t.category === themeCategory)
@@ -140,11 +142,27 @@ export default function CreateNotebookModal({ onClose }) {
                       <span className="text-white" style={{ fontSize: 8 }}>✓</span>
                     </div>
                   )}
+                  <span
+                    role="button"
+                    title="Preview this theme"
+                    onClick={e => { e.stopPropagation(); setPreviewThemeId(t.id) }}
+                    className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-white/80 flex items-center justify-center text-[10px] hover:bg-white transition-colors"
+                  >
+                    👁
+                  </span>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-stone-400 mt-2">Sets your journal's colors, fonts, and curated stickers &amp; page templates — change it anytime from the editor.</p>
+            <p className="text-xs text-stone-400 mt-2">Sets your journal's colors, fonts, and curated stickers &amp; page templates — change it anytime from the editor. Tap 👁 on a theme for a full preview.</p>
           </div>
+
+          {previewThemeId && (
+            <ThemeDetailModal
+              initialThemeId={previewThemeId}
+              onClose={() => setPreviewThemeId(null)}
+              onSelect={(t) => setThemeId(t.id)}
+            />
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
