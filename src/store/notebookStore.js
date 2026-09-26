@@ -22,6 +22,7 @@ export const useNotebookStore = create((set, get) => ({
   create: async (data) => {
     const { uid } = get()
     if (!uid) return null
+    const theme = data.theme
     const notebook = {
       id: crypto.randomUUID(),
       name: data.name,
@@ -32,12 +33,13 @@ export const useNotebookStore = create((set, get) => ({
       updatedAt: new Date().toISOString(),
       theme: {
         backgroundStyle: 'solid',
-        backgroundColor: '#f5f0e8',
-        backgroundTexture: null,
-        fontHeading: 'Georgia',
-        fontBody: 'system-ui',
-        accentColor: data.accentColor || '#c0813a',
-        accentColorSecondary: '#4a7c59',
+        backgroundColor: theme?.backgroundColor ?? '#f5f0e8',
+        backgroundTexture: theme?.backgroundTexture ?? null,
+        fontHeading: theme?.fontHeading ?? 'Georgia',
+        fontBody: theme?.fontBody ?? 'system-ui',
+        accentColor: theme?.accentColor ?? data.accentColor ?? '#c0813a',
+        accentColorSecondary: theme?.accentColorSecondary ?? '#4a7c59',
+        themeId: theme?.id ?? null,
       },
       syncMeta: { provider: 'firestore', status: 'synced' },
     }

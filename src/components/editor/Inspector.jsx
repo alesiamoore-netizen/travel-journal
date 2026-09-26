@@ -8,6 +8,7 @@ import { TEXT_STYLES, applyTextStyle } from '../../data/textStyles'
 import { STICKER_LIST } from './elements/StickerElement'
 import { fsLoadPhotos, fsSavePhoto } from '../../firebase/firestoreHelpers'
 import { uploadPhoto } from '../../firebase/storageHelpers'
+import AiCaptionButton from './AiCaptionButton'
 
 const FONT_OPTIONS = [
   { label: 'Georgia',         value: 'Georgia' },
@@ -410,6 +411,9 @@ function ImageInspector({ element }) {
           placeholder="Caption text…"
           className="w-full border border-stone-200 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
         />
+        {data.storageUrl && (
+          <AiCaptionButton imageUrl={data.storageUrl} onCaption={caption => update({ caption })} />
+        )}
         {data.caption && (
           <div className="space-y-2 mt-1">
             <div className="flex gap-1">
@@ -1180,6 +1184,48 @@ function DrawingInspector({ element }) {
   )
 }
 
+function VoiceMemoInspector({ element }) {
+  const { updateElement, deleteElement } = useEditorStore()
+  const { data } = element
+  const update = patch => updateElement(element.id, { data: { ...data, ...patch } })
+
+  return (
+    <div className="p-4 space-y-4">
+      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Voice Memo</p>
+
+      <Field label="Label">
+        <input
+          type="text"
+          value={data.label ?? ''}
+          onChange={e => update({ label: e.target.value })}
+          placeholder="What's this recording of?"
+          className="w-full border border-stone-200 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+        />
+      </Field>
+
+      {data.storageUrl && (
+        <Field label="Recording">
+          <button
+            onClick={() => update({ storageUrl: null, duration: 0 })}
+            className="w-full py-1.5 text-xs border border-stone-200 rounded-md text-stone-600 hover:bg-stone-50 transition-colors"
+          >
+            Re-record
+          </button>
+        </Field>
+      )}
+
+      <div className="pt-3 border-t border-stone-100">
+        <button
+          onClick={() => deleteElement(element.id)}
+          className="w-full py-1.5 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+        >
+          Delete voice memo
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function CoverInspector({ element }) {
   const { updateElement, deleteElement } = useEditorStore()
   const { data } = element
@@ -1270,6 +1316,8 @@ export default function Inspector() {
         <DrawingInspector element={selected} />
       ) : selected.type === 'cover' ? (
         <CoverInspector element={selected} />
+      ) : selected.type === 'voiceMemo' ? (
+        <VoiceMemoInspector element={selected} />
       ) : null}
     </aside>
   )

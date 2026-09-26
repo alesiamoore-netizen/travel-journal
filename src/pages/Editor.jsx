@@ -280,7 +280,7 @@ export default function Editor() {
       </div>
 
       {isMobile && (
-        <MobileEditorBar onExportPdf={handleExportPdf} onShare={handleShare} exporting={exportState !== null} />
+        <MobileEditorBar onExportPdf={handleExportPdf} onShare={handleShare} onAiDraft={() => setShowAiModal(true)} exporting={exportState !== null} />
       )}
 
       {showPreview && <PreviewModal onClose={() => setShowPreview(false)} />}

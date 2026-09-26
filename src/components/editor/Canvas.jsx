@@ -13,15 +13,17 @@ import WeatherElement from './elements/WeatherElement'
 import CollageElement from './elements/CollageElement'
 import DrawingElement from './elements/DrawingElement'
 import CoverElement from './elements/CoverElement'
-import PagePrompts from './PagePrompts'
+import VoiceMemoElement from './elements/VoiceMemoElement'
 import PrintOverlay from './PrintOverlay'
 import { getTextureStyle } from '../../utils/textures'
+import { useMobile } from '../../hooks/useMobile'
 
 // No compaction + allow overlap (elements stay exactly where placed, can overlap freely)
 const OVERLAP_COMPACTOR = getCompactor(null, true)
 
-const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx, elements: elementsProp, readOnly, showPrompts = true }, ref) {
+const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx, elements: elementsProp, readOnly }, ref) {
   const store = useEditorStore()
+  const isMobile = useMobile()
   const elements = elementsProp ?? store.elements
   const { selectedId, select, deselect, updateElementGrid, printOverlay, notebook } = store
 
@@ -113,17 +115,17 @@ const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeigh
               style={Object.keys(combinedStyle).length ? combinedStyle : undefined}
               onClick={e => { e.stopPropagation(); if (!readOnly) select(el.id) }}
             >
-              {/* Drag handle strip */}
+              {/* Drag handle strip — taller on mobile for an easier touch target */}
               <div
-                className={`drag-handle absolute top-0 left-0 right-0 h-4 z-20 flex items-center justify-center cursor-grab active:cursor-grabbing transition-opacity ${
+                className={`drag-handle absolute top-0 left-0 right-0 ${isMobile ? 'h-8' : 'h-4'} z-20 flex items-center justify-center cursor-grab active:cursor-grabbing transition-opacity ${
                   readOnly ? 'hidden' : selectedId === el.id
                     ? 'opacity-100 bg-amber-500/10'
-                    : 'opacity-0 group-hover/el:opacity-100 bg-amber-400/10'
+                    : isMobile ? 'opacity-0' : 'opacity-0 group-hover/el:opacity-100 bg-amber-400/10'
                 }`}
               >
                 <div className="flex gap-0.5">
                   {[0, 1, 2, 3, 4, 5].map(i => (
-                    <span key={i} className="w-0.5 h-0.5 rounded-full bg-current opacity-50" />
+                    <span key={i} className={isMobile ? 'w-1 h-1 rounded-full bg-current opacity-60' : 'w-0.5 h-0.5 rounded-full bg-current opacity-50'} />
                   ))}
                 </div>
               </div>
@@ -138,11 +140,11 @@ const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeigh
               {el.type === 'collage'  && <CollageElement  key={el.id} element={el} />}
               {el.type === 'drawing'  && <DrawingElement  key={el.id} element={el} />}
               {el.type === 'cover'    && <CoverElement    key={el.id} element={el} />}
+              {el.type === 'voiceMemo' && <VoiceMemoElement key={el.id} element={el} />}
             </div>
           )
         })}
       </GridLayout>
-      {!readOnly && showPrompts && elements.length === 0 && <PagePrompts />}
     </div>
   )
 })

@@ -402,6 +402,13 @@ export default function Sidebar() {
               <span className="text-sm">🌅</span>
               <span className="text-xs font-medium">Cover Block</span>
             </button>
+            <button
+              onClick={() => addElement('voiceMemo')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-stone-700 hover:bg-amber-50 hover:text-amber-800 border border-stone-200 hover:border-amber-200 transition-colors"
+            >
+              <span className="text-sm">🎙</span>
+              <span className="text-xs font-medium">Voice Memo</span>
+            </button>
           </div>
         </div>
       )}

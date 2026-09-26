@@ -6,6 +6,7 @@ import { fsSavePhoto, fsLoadPhotos } from '../../firebase/firestoreHelpers'
 import { STICKER_LIST } from './elements/StickerElement'
 import { TEXT_STYLES, applyTextStyle } from '../../data/textStyles'
 import { LAYOUTS, LAYOUT_CATEGORIES } from '../../data/layouts'
+import AiCaptionButton from './AiCaptionButton'
 
 // ── Shared Drawer shell ────────────────────────────────────────────────────────
 function Drawer({ open, onClose, title, onBack, children }) {
@@ -266,6 +267,7 @@ function AddDrawer({ onClose }) {
     { icon: '—', label: 'Divider', sub: 'Add a decorative line', action: () => { addElement('divider'); onClose() } },
     { icon: '✂', label: 'Keepsake Box', sub: 'Placeholder to tape/glue something', action: () => { addElement('keepsake'); onClose() } },
     { icon: '🌤️', label: 'Weather', sub: 'Historical weather for a date', action: () => { addElement('weather'); onClose() } },
+    { icon: '🎙', label: 'Voice Memo', sub: 'Record an audio note', action: () => { addElement('voiceMemo'); onClose() } },
   ]
 
   return (
@@ -374,6 +376,11 @@ function MobileInspectorDrawer({ element, onClose }) {
             <input type="text" value={data.caption??''} onChange={e=>update({caption:e.target.value})}
               placeholder="Caption text…"
               className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            {data.storageUrl && (
+              <div className="mt-2">
+                <AiCaptionButton mobile imageUrl={data.storageUrl} onCaption={caption => update({ caption })} />
+              </div>
+            )}
             {data.caption && (
               <div className="space-y-3 mt-2">
                 <div className="flex gap-2">
@@ -579,6 +586,20 @@ function MobileInspectorDrawer({ element, onClose }) {
           )}
         </>)}
 
+        {element.type === 'voiceMemo' && (<>
+          <Sec label="Label">
+            <input type="text" value={data.label??''} onChange={e=>update({label:e.target.value})}
+              placeholder="What's this recording of?"
+              className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          </Sec>
+          {data.storageUrl && (
+            <button onClick={()=>update({storageUrl:null,duration:0})}
+              className="w-full py-3 rounded-xl border border-stone-200 text-stone-500 text-sm active:bg-stone-50">
+              Re-record
+            </button>
+          )}
+        </>)}
+
         <div className="pt-2 border-t border-stone-100">
           <button onClick={handleDelete}
             className="w-full py-3 rounded-xl text-red-600 border border-red-200 font-medium text-sm active:bg-red-50">
@@ -611,7 +632,7 @@ function Tog({ on, onClick, children }) {
 }
 
 // ── Bottom bar ────────────────────────────────────────────────────────────────
-export default function MobileEditorBar({ onExportPdf, onShare, exporting }) {
+export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, exporting }) {
   const [drawer, setDrawer] = useState(null)
   const { pages, currentPageId, selectedId, elements } = useEditorStore()
   const currentIdx = pages.findIndex(p => p.id === currentPageId)
@@ -681,6 +702,18 @@ export default function MobileEditorBar({ onExportPdf, onShare, exporting }) {
       {drawer === 'more' && (
         <Drawer open title="More options" onClose={() => setDrawer(null)}>
           <div className="p-4 space-y-3">
+            <button
+              onClick={() => { onAiDraft?.(); setDrawer(null) }}
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-700 flex items-center justify-center flex-shrink-0 text-white text-lg font-bold">
+                ✦
+              </div>
+              <div className="text-left">
+                <div className="font-semibold text-stone-800">AI Writing Assistant</div>
+                <div className="text-xs text-stone-500">Draft, polish, continue, or change tone</div>
+              </div>
+            </button>
             <button
               onClick={() => { onShare?.(); setDrawer(null) }}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"

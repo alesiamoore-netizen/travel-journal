@@ -36,3 +36,18 @@ export async function uploadPhoto(blob, filename, uid, notebookId) {
     uploadedAt: new Date().toISOString(),
   }
 }
+
+export async function uploadAudio(blob, uid, notebookId, duration = 0) {
+  const audioId = crypto.randomUUID()
+  const ext = blob.type.includes('mp4') ? 'm4a' : 'webm'
+  const audioRef = ref(firebaseStorage, `users/${uid}/audio/${audioId}.${ext}`)
+  const snap = await uploadBytes(audioRef, blob, { contentType: blob.type || 'audio/webm' })
+  const storageUrl = await getDownloadURL(snap.ref)
+  return {
+    id: audioId,
+    notebookId,
+    storageUrl,
+    duration,
+    uploadedAt: new Date().toISOString(),
+  }
+}

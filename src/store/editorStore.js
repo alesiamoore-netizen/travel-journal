@@ -90,6 +90,11 @@ function defaultData(type) {
     strokeColor: '#2c2c2c',
     strokeWidth: 2,
   }
+  if (type === 'voiceMemo') return {
+    storageUrl: null,
+    duration: 0,
+    label: '',
+  }
   if (type === 'cover') return {
     storageUrl: null,
     thumbnailUrl: null,
@@ -115,6 +120,7 @@ function defaultGrid(type) {
   if (type === 'collage')  return { x: 0, y: 0,  w: 12, h: 10 }
   if (type === 'drawing')  return { x: 1, y: 2,  w: 10, h: 8  }
   if (type === 'cover')    return { x: 0, y: 0,  w: 12, h: 16 }
+  if (type === 'voiceMemo') return { x: 1, y: 6,  w: 10, h: 4  }
   return                           { x: 2, y: 2,  w: 8,  h: 8  }
 }
 

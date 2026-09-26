@@ -3,10 +3,9 @@
   "configurations": [
     {
       "name": "travel-journal",
-      "runtimeExecutable": "cmd.exe",
-      "runtimeArgs": ["/c", "C:\\Users\\ICrea\\Claude\\Travel Journal\\start-dev.cmd"],
-      "port": 5174,
-      "autoPort": true
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173
     }
   ]
 }

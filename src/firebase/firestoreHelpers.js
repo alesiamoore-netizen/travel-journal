@@ -47,8 +47,8 @@ export async function fsDeleteNotebook(uid, notebookId) {
 // ── Pages ─────────────────────────────────────────────────────────────────────
 
 export async function fsLoadPages(uid, notebookId) {
-  const snap = await getDocs(query(userCol(uid, 'pages'), where('notebookId', '==', notebookId), orderBy('order')))
-  return snap.docs.map(d => d.data())
+  const snap = await getDocs(query(userCol(uid, 'pages'), where('notebookId', '==', notebookId)))
+  return snap.docs.map(d => d.data()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 }
 
 export async function fsSavePage(uid, page) {
@@ -103,8 +103,8 @@ export async function fsReplacePageElements(uid, pageId, notebookId, elements) {
 // ── Photos ────────────────────────────────────────────────────────────────────
 
 export async function fsLoadPhotos(uid, notebookId) {
-  const snap = await getDocs(query(userCol(uid, 'photos'), where('notebookId', '==', notebookId), orderBy('uploadedAt', 'desc')))
-  return snap.docs.map(d => d.data())
+  const snap = await getDocs(query(userCol(uid, 'photos'), where('notebookId', '==', notebookId)))
+  return snap.docs.map(d => d.data()).sort((a, b) => (b.uploadedAt ?? '').localeCompare(a.uploadedAt ?? ''))
 }
 
 export async function fsSavePhoto(uid, photo) {
@@ -113,10 +113,12 @@ export async function fsSavePhoto(uid, photo) {
 
 export async function fsGetFirstPageCover(uid, notebookId) {
   const pages = await fsLoadPages(uid, notebookId)
-  if (!pages.length) return null
-  const elements = await fsLoadElements(uid, pages[0].id)
-  const imgEl = elements.find(e => e.type === 'image' && e.data?.thumbnailUrl)
-  return imgEl?.data?.thumbnailUrl ?? null
+  for (const page of pages) {
+    const elements = await fsLoadElements(uid, page.id)
+    const coverEl = elements.find(e => (e.type === 'image' || e.type === 'cover') && e.data?.thumbnailUrl)
+    if (coverEl) return coverEl.data.thumbnailUrl
+  }
+  return null
 }
 
 // ── Public share (public_notebooks collection) ─────────────────────────────

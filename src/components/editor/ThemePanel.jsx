@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useEditorStore } from '../../store/editorStore'
-import { THEME_FONTS, THEME_PRESETS, loadFont } from '../../utils/fonts'
+import { THEME_FONTS, loadFont } from '../../utils/fonts'
+import { THEMES, THEME_CATEGORIES } from '../../data/themes'
 import { TEXTURES, getTextureStyle } from '../../utils/textures'
 
 function Field({ label, children }) {
@@ -15,6 +16,9 @@ function Field({ label, children }) {
 export default function ThemePanel() {
   const { notebook, updateTheme } = useEditorStore()
   const theme = notebook?.theme ?? {}
+  const [category, setCategory] = useState('Occasion')
+
+  const filteredThemes = THEMES.filter(t => t.category === category)
 
   // Load fonts whenever they change
   useEffect(() => {
@@ -26,6 +30,7 @@ export default function ThemePanel() {
     loadFont(preset.fontHeading)
     loadFont(preset.fontBody)
     updateTheme({
+      themeId: preset.id,
       accentColor: preset.accentColor,
       accentColorSecondary: preset.accentColorSecondary,
       backgroundColor: preset.backgroundColor,
@@ -41,17 +46,32 @@ export default function ThemePanel() {
   }
 
   const isCurrentPreset = (preset) =>
-    theme.accentColor === preset.accentColor &&
-    theme.backgroundColor === preset.backgroundColor
+    theme.themeId ? theme.themeId === preset.id : (
+      theme.accentColor === preset.accentColor &&
+      theme.backgroundColor === preset.backgroundColor
+    )
 
   return (
     <div className="p-4 space-y-4 overflow-y-auto">
-      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Page Theme</p>
+      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Journal Theme</p>
 
       {/* Presets */}
       <Field label="Theme gallery">
+        <div className="flex gap-1 mb-2">
+          {THEME_CATEGORIES.map(c => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`flex-1 py-1 text-xs font-semibold rounded-md transition-colors ${
+                category === c ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 gap-2">
-          {THEME_PRESETS.map(preset => (
+          {filteredThemes.map(preset => (
             <button
               key={preset.id}
               title={preset.label}
@@ -68,7 +88,7 @@ export default function ThemePanel() {
                   className="text-xs font-bold leading-tight truncate"
                   style={{ fontFamily: preset.fontHeading, color: preset.accentColor }}
                 >
-                  {preset.label}
+                  {preset.icon} {preset.label}
                 </p>
                 <p
                   className="text-[9px] leading-snug opacity-60 mt-0.5"

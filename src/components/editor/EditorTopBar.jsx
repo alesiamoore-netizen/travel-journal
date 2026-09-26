@@ -151,7 +151,7 @@ export default function EditorTopBar({ onExportPdf, onExportPrintPdf, onShare, o
             <button
               onClick={onAiDraft}
               className="px-3 py-1 rounded text-xs font-medium text-amber-700 border border-amber-200 hover:bg-amber-50 transition-colors"
-              title="Draft journal entry with AI"
+              title="AI writing assistant: draft, polish, continue, or adjust tone"
             >
               ✦ AI
             </button>

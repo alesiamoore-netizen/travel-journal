@@ -1,15 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNotebookStore } from '../../store/notebookStore'
-
-const ACCENT_PRESETS = [
-  { label: 'Amber',      color: '#c0813a' },
-  { label: 'Sage',       color: '#4a7c59' },
-  { label: 'Navy',       color: '#1e3a5f' },
-  { label: 'Rose',       color: '#9d4f6a' },
-  { label: 'Terracotta', color: '#b85c38' },
-  { label: 'Slate',      color: '#4a5568' },
-]
+import { THEMES, THEME_CATEGORIES } from '../../data/themes'
 
 const PAGE_SIZES = [
   { value: '8x10',   label: '8 × 10"',            desc: 'Portrait — standard photo book' },
@@ -23,14 +15,18 @@ export default function CreateNotebookModal({ onClose }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [pageSize, setPageSize] = useState('8x10')
-  const [accentColor, setAccentColor] = useState('#c0813a')
+  const [themeCategory, setThemeCategory] = useState('Occasion')
+  const [themeId, setThemeId] = useState('classic')
   const [saving, setSaving] = useState(false)
+
+  const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0]
+  const filteredThemes = THEMES.filter(t => t.category === themeCategory)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!name.trim()) return
     setSaving(true)
-    const notebook = await create({ name: name.trim(), description, pageSize, accentColor })
+    const notebook = await create({ name: name.trim(), description, pageSize, theme })
     navigate(`/journal/${notebook.id}`)
   }
 
@@ -40,15 +36,15 @@ export default function CreateNotebookModal({ onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md"
+        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 pt-6 pb-4 border-b border-stone-100">
+        <div className="px-6 pt-6 pb-4 border-b border-stone-100 flex-shrink-0">
           <h2 className="text-xl font-bold text-stone-900">New Travel Journal</h2>
           <p className="text-sm text-stone-500 mt-1">Set up your trip notebook</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">
@@ -103,45 +99,51 @@ export default function CreateNotebookModal({ onClose }) {
             </div>
           </div>
 
-          {/* Accent color */}
+          {/* Theme */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">Accent color</label>
-            <div className="flex gap-2 flex-wrap items-center">
-              {ACCENT_PRESETS.map((p) => (
+            <label className="block text-sm font-medium text-stone-700 mb-2">Theme</label>
+            <div className="flex gap-1.5 mb-2">
+              {THEME_CATEGORIES.map(c => (
                 <button
-                  key={p.color}
+                  key={c}
                   type="button"
-                  title={p.label}
-                  onClick={() => setAccentColor(p.color)}
-                  className={`w-8 h-8 rounded-full transition-transform focus:outline-none ${
-                    accentColor === p.color
-                      ? 'scale-125 ring-2 ring-offset-2 ring-stone-400'
-                      : 'hover:scale-110'
+                  onClick={() => setThemeCategory(c)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                    themeCategory === c ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
                   }`}
-                  style={{ backgroundColor: p.color }}
-                />
-              ))}
-              <div className="relative">
-                <input
-                  type="color"
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  className="w-8 h-8 rounded-full cursor-pointer opacity-0 absolute inset-0"
-                  title="Custom color"
-                />
-                <div
-                  className="w-8 h-8 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 text-xs pointer-events-none"
-                  title="Custom color"
                 >
-                  +
-                </div>
-              </div>
+                  {c}
+                </button>
+              ))}
             </div>
-            {/* Preview stripe */}
-            <div
-              className="mt-3 h-1 rounded-full transition-colors"
-              style={{ backgroundColor: accentColor }}
-            />
+            <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto p-0.5">
+              {filteredThemes.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setThemeId(t.id)}
+                  className={`relative rounded-lg overflow-hidden border-2 text-left transition-all ${
+                    themeId === t.id ? 'border-amber-500 shadow-md' : 'border-stone-200 hover:border-stone-400'
+                  }`}
+                  style={{ backgroundColor: t.backgroundColor }}
+                >
+                  <div className="px-2 pt-2 pb-1.5">
+                    <p className="text-xs font-bold leading-tight" style={{ fontFamily: t.fontHeading, color: t.accentColor }}>
+                      {t.icon} {t.label}
+                    </p>
+                    <p className="text-[9px] leading-snug opacity-60 mt-0.5" style={{ fontFamily: t.fontBody, color: t.accentColor }}>
+                      Aa Bb
+                    </p>
+                  </div>
+                  {themeId === t.id && (
+                    <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-amber-500 flex items-center justify-center">
+                      <span className="text-white" style={{ fontSize: 8 }}>✓</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-stone-400 mt-2">Sets your journal's colors, fonts, and curated stickers &amp; page templates — change it anytime from the editor.</p>
           </div>
 
           {/* Actions */}
