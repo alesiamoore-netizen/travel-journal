@@ -4,9 +4,130 @@ import { useAuth } from '../../context/AuthContext'
 import { THEMES, THEME_CATEGORIES, resolveThemedElements } from '../../data/themes'
 import { loadFont } from '../../utils/fonts'
 import { fsLoadPhotos } from '../../firebase/firestoreHelpers'
+import DividerElement from './elements/DividerElement'
+import KeepeakeElement from './elements/KeepeakeElement'
+import StickerElement from './elements/StickerElement'
 
 const COLS = 12, ROWS = 16, SW = 60, SH = 80, GAP = 0.8
 const DECORATION_LEVELS = ['minimal', 'standard', 'rich']
+// Real element renderers (DividerElement, KeepeakeElement, StickerElement) are pure/read-only
+// and safe to reuse directly for a genuine preview — they only fall back to the *live* notebook
+// theme when data.color/borderColor is the literal string 'accent', which resolved themed
+// elements never produce (resolveThemedElements always bakes in a real hex). TextElement mounts
+// a live *editable* TipTap instance (wrong for a static preview) and ImageElement/CoverElement
+// have real upload click-handlers wired to whatever journal happens to be open (risky to reuse
+// inside a modal that may not even have a notebook yet) — both get purpose-built read-only
+// stand-ins below instead.
+
+function extractPlainText(node) {
+  if (!node) return ''
+  if (node.type === 'text') return node.text ?? ''
+  return (node.content ?? []).map(extractPlainText).join('')
+}
+
+const CLIP_PATHS = {
+  circle: 'circle(50% at 50% 50%)',
+  diamond: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+  oval: 'ellipse(50% 38% at 50% 50%)',
+  arch: 'ellipse(50% 55% at 50% 55%)',
+  hexagon: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+}
+
+// Real photo (from the journal, if any) or a bundled illustration fallback — never a flat block.
+function MockPhoto({ data, photo, Illustration, accent }) {
+  const clip = CLIP_PATHS[data.clipShape]
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={{ clipPath: clip, borderRadius: clip ? undefined : 2 }}>
+      {photo ? (
+        <img src={photo} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <Illustration color={accent} />
+      )}
+    </div>
+  )
+}
+
+// Read-only text — real extracted copy, real theme typography, no live editor instance.
+function MockText({ data, scale }) {
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden px-1"
+      style={{
+        fontFamily: data.fontFamily,
+        fontSize: Math.max((data.fontSize ?? 14) * scale, 6),
+        color: data.color,
+        textAlign: data.textStyle === 'dateline' || data.textStyle === 'caption' ? 'left' : undefined,
+        lineHeight: 1.3,
+        letterSpacing: data.textStyle === 'dateline' ? '0.06em' : undefined,
+        textTransform: data.textStyle === 'dateline' ? 'uppercase' : undefined,
+        fontWeight: data.textStyle === 'heading' ? 700 : 400,
+      }}
+    >
+      {extractPlainText(data.content)}
+    </div>
+  )
+}
+
+// Stylized static map mockup (not live Leaflet — no real coordinates exist yet on an
+// unapplied theme layout, and mounting several live tile-fetching maps in a modal isn't worth
+// the weight). Themed route line + pins over a soft terrain tint.
+function MockMap({ data, theme }) {
+  const route = data.routeColor ?? theme.accentColor
+  const pin = data.pinColor ?? theme.accentColorSecondary
+  return (
+    <div className="absolute inset-0 overflow-hidden rounded" style={{ backgroundColor: `${route}22` }}>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+        <path d="M8 80 Q 30 40 50 55 T 92 20" fill="none" stroke={route} strokeWidth="2.5" strokeDasharray="4 3" strokeLinecap="round" opacity="0.85" />
+        <circle cx="8" cy="80" r="3.5" fill={pin} stroke="white" strokeWidth="1" />
+        <circle cx="92" cy="20" r="3.5" fill={pin} stroke="white" strokeWidth="1" />
+      </svg>
+    </div>
+  )
+}
+
+// One full, genuinely populated page mockup — real photos/illustration, real readable text,
+// real divider/sticker/keepsake rendering, a styled map. Percentage-positioned like the real
+// Canvas, at a fixed pixel width so font sizing scales predictably.
+function PageMockup({ item, theme, photos, level, seed = 0 }) {
+  const FRAME_W = 300
+  const REFERENCE_W = 680 // matches the app's default (non-mobile) canvas width
+  const scale = FRAME_W / REFERENCE_W
+  const Illustration = FALLBACK_ILLUSTRATIONS[seed % FALLBACK_ILLUSTRATIONS.length]
+  const photo = photos?.[seed % Math.max(photos?.length ?? 0, 1)]
+  const resolved = resolveThemedElements(item.elements, theme, item.id, level)
+
+  return (
+    <div className="flex-shrink-0" style={{ width: FRAME_W }}>
+      <div
+        className="relative w-full rounded-md overflow-hidden border border-stone-200 shadow-sm"
+        style={{ aspectRatio: '10 / 16', backgroundColor: theme.backgroundColor }}
+      >
+        {resolved.map((el, i) => {
+          const style = {
+            left: `${(el.grid.x / COLS) * 100}%`,
+            top: `${(el.grid.y / ROWS) * 100}%`,
+            width: `${(el.grid.w / COLS) * 100}%`,
+            height: `${(el.grid.h / ROWS) * 100}%`,
+          }
+          let content = null
+          if (el.type === 'image' || el.type === 'cover') content = <MockPhoto data={el.data} photo={photo} Illustration={Illustration} accent={theme.accentColor} />
+          else if (el.type === 'text') content = <MockText data={el.data} scale={scale} />
+          else if (el.type === 'map') content = <MockMap data={el.data} theme={theme} />
+          else if (el.type === 'divider') content = <DividerElement element={el} />
+          else if (el.type === 'keepsake') content = <KeepeakeElement element={el} />
+          else if (el.type === 'sticker') content = <StickerElement element={el} />
+          else content = <div className="absolute inset-0 rounded" style={{ backgroundColor: `${theme.accentColor}22` }} />
+          return (
+            <div key={i} className="absolute" style={style}>
+              {content}
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-xs text-stone-600 text-center mt-1.5 font-medium">{item.icon} {item.name}</p>
+    </div>
+  )
+}
 
 // Small bundled flat-illustration placeholders — used only in previews, only when the
 // journal has no real photos yet. Never written into real content.
@@ -123,6 +244,27 @@ function ThemeDetail({ theme, onClose, onApplied, onSelect }) {
       }, {}))
     : []
 
+  // Showcase examples for the big, genuinely-populated preview — chosen so that, between them,
+  // they demonstrate every treatment (photo, text, map, keepsake, divider, sticker), not just
+  // whichever three happen to come first. Falls back to the first few layouts if a theme
+  // doesn't have these specific groups/element types yet.
+  const showcase = hasContent ? (() => {
+    const all = [...(theme.layouts ?? [])]
+    const hasVisibleDivider = (i) => i.elements.some(e => e.type === 'divider' && (e.minDecorationLevel ?? 'minimal') !== 'rich')
+    const pick = (pred) => all.find(pred)
+    const picks = [
+      pick(i => i.group === 'Writing' && i.elements.some(e => e.type === 'image')) ?? pick(i => i.group === 'Writing'),
+      pick(i => i.group === 'Map & Itinerary' && i.elements.some(e => e.type === 'map')) ?? pick(i => i.group === 'Map & Itinerary'),
+      pick(i => i.group === 'Keepsake'),
+      pick(hasVisibleDivider),
+    ].filter(Boolean)
+    for (const item of all) {
+      if (picks.length >= 4) break
+      if (!picks.includes(item)) picks.push(item)
+    }
+    return picks.slice(0, 4)
+  })() : []
+
   const applyPreserveOnly = async () => {
     setStage('applying')
     await changeJournalTheme(theme, { restyle: false })
@@ -183,6 +325,15 @@ function ThemeDetail({ theme, onClose, onApplied, onSelect }) {
                 >
                   {l}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Interior page examples</p>
+            <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+              {showcase.map((item, i) => (
+                <PageMockup key={item.id} item={item} theme={theme} photos={photos} level={level} seed={i} />
               ))}
             </div>
           </div>
@@ -282,7 +433,7 @@ export default function ThemeDetailModal({ onClose, initialThemeId, onSelect }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className={`bg-white rounded-2xl shadow-2xl w-full ${selected ? 'max-w-3xl' : 'max-w-lg'} max-h-[88vh] flex flex-col transition-all`} onClick={e => e.stopPropagation()}>
         <div className="px-5 pt-5 pb-3 border-b border-stone-100 flex items-center justify-between flex-shrink-0">
           <h2 className="text-base font-bold text-stone-900">{selected ? 'Theme Preview' : 'Explore Journal Themes'}</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-700 text-xl w-7 h-7 flex items-center justify-center rounded hover:bg-stone-100">✕</button>
