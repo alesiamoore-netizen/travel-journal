@@ -10,6 +10,12 @@ import StickerElement from './elements/StickerElement'
 
 const COLS = 12, ROWS = 16, SW = 60, SH = 80, GAP = 0.8
 const DECORATION_LEVELS = ['minimal', 'standard', 'rich']
+// Bundled, self-contained representative photo per theme (served locally, no runtime network
+// request) — used as the preview fallback only when the journal being previewed has no
+// uploaded photos of its own. See the adjacent .PROVENANCE.md for source/license/creator.
+const THEME_FALLBACK_PHOTOS = {
+  backpacking: '/theme-previews/backpacking-trail.jpg',
+}
 // Real element renderers (DividerElement, KeepeakeElement, StickerElement) are pure/read-only
 // and safe to reuse directly for a genuine preview — they only fall back to the *live* notebook
 // theme when data.color/borderColor is the literal string 'accent', which resolved themed
@@ -236,6 +242,11 @@ function ThemeDetail({ theme, onClose, onApplied, onSelect }) {
     if (user && notebook) fsLoadPhotos(user.uid, notebook.id).then(ps => setPhotos((ps ?? []).slice(0, 3).map(p => p.thumbnailUrl).filter(Boolean)))
   }, [user, notebook])
 
+  // Real journal photos always take priority; only when there are none does the preview fall
+  // back to this theme's bundled representative photo (if it has one yet) — and only after
+  // that, to the illustrated placeholder, inside MockPhoto itself.
+  const effectivePhotos = photos.length ? photos : (THEME_FALLBACK_PHOTOS[theme.id] ? [THEME_FALLBACK_PHOTOS[theme.id]] : [])
+
   const groups = hasContent
     ? Object.entries([...(theme.covers ?? []), ...(theme.layouts ?? [])].reduce((acc, item) => {
         const g = item.group ?? 'Layouts'
@@ -333,7 +344,7 @@ function ThemeDetail({ theme, onClose, onApplied, onSelect }) {
             <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Interior page examples</p>
             <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
               {showcase.map((item, i) => (
-                <PageMockup key={item.id} item={item} theme={theme} photos={photos} level={level} seed={i} />
+                <PageMockup key={item.id} item={item} theme={theme} photos={effectivePhotos} level={level} seed={i} />
               ))}
             </div>
           </div>
@@ -352,7 +363,7 @@ function ThemeDetail({ theme, onClose, onApplied, onSelect }) {
                       title={onSelect ? item.name : `Apply "${item.name}" to the current page`}
                     >
                       <div className="w-full aspect-[3/4] rounded-lg overflow-hidden border-2 border-stone-200 group-hover:shadow-md transition-shadow" style={{ borderColor: undefined }}>
-                        <ThemedThumb elements={resolved} theme={theme} photos={photos} seed={gi * 4 + ii} />
+                        <ThemedThumb elements={resolved} theme={theme} photos={effectivePhotos} seed={gi * 4 + ii} />
                       </div>
                       <span className="text-[10px] text-stone-600 text-center leading-tight">{item.icon} {item.name}</span>
                     </button>
