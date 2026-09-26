@@ -49,6 +49,7 @@ npx firebase-tools deploy --only hosting --project travel-journal-35449
 - Dashboard cover thumbnails now also pick up Cover Block photos and fall through to later pages, not just page-1 plain images (`fsGetFirstPageCover` in `firestoreHelpers.js`)
 - Removed `orderBy` from two Firestore queries (`fsLoadPages`, `fsLoadPhotos`) — they needed a composite index that was never provisioned, causing journals to hang forever on "Loading…". Sorting moved client-side instead, which needs no index at all. **If you ever see a journal stuck on "Loading…" with a "requires an index" console error, it's almost certainly a stale deployed build, not a new index problem — redeploy + hard refresh first.**
 - Bigger touch targets for drag/resize on mobile (`Canvas.jsx`, `index.css`)
+- Fixed a page-switch flicker where the neutral editor "desk mat" background briefly showed through instead of the theme's actual page color (`Editor.jsx` page-flip transition was animating `opacity` to 0, not just a transform)
 
 ## Design decisions this session reversed — don't redo these
 The user pushed back hard on two things; both are settled, don't re-litigate:
@@ -64,7 +65,7 @@ The 17-theme system above is considered too shallow — it only recolors backgro
 - Page backgrounds/fonts are already 100% consistent across all pages (`Canvas.jsx` reads `notebook.theme` live every render) — the "inconsistent page" complaint is at the *element* level: `layouts.js` entries hardcode literal colors unrelated to any theme.
 - `themeOverrides: {}` written onto every page doc is fully dead (written in 5 places, read in 0).
 - Theme-switching UI (`ThemePanel.jsx`) only renders inside `Inspector.jsx`, which is itself gated `{!isMobile && <Inspector />}` in `Editor.jsx` — **there is currently no theme-switching UI on mobile at all.**
-- A hypothesis (**unconfirmed** — lost the authenticated browser session before it could be verified empirically): a "gray Page 2" the user saw on a live Backpacking-themed journal is very likely `CoverElement.jsx`'s empty-state placeholder (`bg-stone-200`, full-page-sized, theme-unaware) on a Cover Block that never got a photo uploaded — not a background/font bug. Needs confirming with the user (does Page 2 show a "🌅 Click to add cover photo" prompt?) before treating it as solved.
+- **RESOLVED, was never a real bug**: the "gray Page 2" report was re-checked directly and both pages are correctly the theme's actual background color. It was a screenshot-timing artifact — `Editor.jsx`'s page-flip transition toggled the page wrapper's `opacity` to 0 for ~90ms on every page switch, briefly exposing `<main>`'s fixed neutral `#d4cfc8` "desk mat" background behind the Canvas (Canvas always paints its own theme color) before fading back in. Fixed by dropping the opacity toggle and keeping only the translateY/scale transform for the flip feel — Canvas, and therefore the real theme background, is never invisible during a page switch anymore.
 
 **Architecture decided in the plan** (revise if the user pushes back further, but this is the current direction):
 - Theme gets `covers: [...]` (3 entries) and `layouts: [...]` (10 entries, matching a specific named list: hero photo, photo+writing, 4-photo collage, route map+narrative, daily field-notes, timeline/itinerary, keepsake arrangement, text-focused entry, chapter divider, sunrise/sunset) — same `{id,name,icon,elements}` shape as everything in `layouts.js`, injected as an extra category into the existing Layouts picker only when that theme is active. One picker, not a parallel gallery.
@@ -76,7 +77,6 @@ The 17-theme system above is considered too shallow — it only recolors backgro
 
 **Not yet resolved / still open** when this doc was written:
 - The 3-tier decoration level content gap above.
-- Confirming the gray-Page-2 hypothesis.
 - Full backward-compat test matrix across existing journals with various/no themeId (asked for explicitly, not yet executed since implementation hasn't started).
 - The reference implementation itself — none of the theme-phase-2 code exists yet, only the plan.
 

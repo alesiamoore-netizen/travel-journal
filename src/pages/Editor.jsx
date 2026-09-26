@@ -214,9 +214,8 @@ export default function Editor() {
           }}
         >
           <div style={{
-            opacity: pageVisible ? 1 : 0,
             transform: pageVisible ? 'translateY(0) scale(1)' : 'translateY(5px) scale(0.995)',
-            transition: pageVisible ? 'opacity 0.15s ease, transform 0.15s ease' : 'none',
+            transition: pageVisible ? 'transform 0.15s ease' : 'none',
           }}>
           {!isMobile && spreadView ? (
             <div className="flex items-start gap-0" style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.22))' }}>
