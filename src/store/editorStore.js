@@ -432,10 +432,15 @@ export const useEditorStore = create((set, get) => ({
     if (!uid) return null
     get()._saveUndo()
     const data = defaultData(type)
-    // New stickers should pick up the journal's active theme color instead of the hardcoded
-    // default — only on creation, never overwriting a color the user later chooses themselves.
+    // New stickers/maps should pick up the journal's active theme colors instead of the
+    // hardcoded defaults — only on creation, never overwriting a color the user later
+    // chooses themselves.
     if (type === 'sticker' && notebook?.theme?.accentColor) {
       data.color = notebook.theme.accentColor
+    }
+    if (type === 'map' && notebook?.theme?.accentColor) {
+      data.routeColor = notebook.theme.tokens?.mapRoute ?? notebook.theme.accentColor
+      data.pinColor = notebook.theme.accentColorSecondary ?? notebook.theme.accentColor
     }
     const element = {
       id: crypto.randomUUID(),
