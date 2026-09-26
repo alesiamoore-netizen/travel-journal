@@ -9,6 +9,7 @@ import { STICKER_LIST } from './elements/StickerElement'
 import { fsLoadPhotos, fsSavePhoto } from '../../firebase/firestoreHelpers'
 import { uploadPhoto } from '../../firebase/storageHelpers'
 import AiCaptionButton from './AiCaptionButton'
+import { orderStickersForTheme } from '../../data/themes'
 
 const FONT_OPTIONS = [
   { label: 'Georgia',         value: 'Georgia' },
@@ -888,6 +889,7 @@ function StickerInspector({ element }) {
   const { updateElement, deleteElement, notebook } = useEditorStore()
   const { data } = element
   const update = patch => updateElement(element.id, { data: { ...data, ...patch } })
+  const orderedStickers = orderStickersForTheme(notebook?.theme?.themeId, STICKER_LIST)
 
   return (
     <div className="p-4 space-y-4">
@@ -895,7 +897,7 @@ function StickerInspector({ element }) {
 
       <Field label="Style">
         <div className="grid grid-cols-3 gap-1">
-          {STICKER_LIST.map(s => (
+          {orderedStickers.map(s => (
             <button
               key={s.id}
               onClick={() => update({ stickerId: s.id })}

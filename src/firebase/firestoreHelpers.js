@@ -100,6 +100,38 @@ export async function fsReplacePageElements(uid, pageId, notebookId, elements) {
   await batch.commit()
 }
 
+export async function fsLoadNotebookElements(uid, notebookId) {
+  const snap = await getDocs(query(userCol(uid, 'elements'), where('notebookId', '==', notebookId)))
+  return snap.docs.map(d => d.data())
+}
+
+const FIRESTORE_BATCH_LIMIT = 500
+
+// Commits `{id, patch}` element updates in chunks of <=500 (Firestore's per-batch op limit),
+// sequentially, all-or-visibly-partial. Returns { succeededIds, failedAt, error } — failedAt is
+// the id list of the batch that failed (if any); everything before it already committed. Each
+// write is `updateDoc(ref, patch)` with the full resolved patch (never a delta), so retrying a
+// failed/partial run is safe — re-applying the same target state is a no-op for anything that
+// already succeeded.
+export async function fsBatchUpdateElements(uid, updates) {
+  const chunks = []
+  for (let i = 0; i < updates.length; i += FIRESTORE_BATCH_LIMIT) {
+    chunks.push(updates.slice(i, i + FIRESTORE_BATCH_LIMIT))
+  }
+  const succeededIds = []
+  for (const chunk of chunks) {
+    const batch = writeBatch(firestoreDb)
+    chunk.forEach(({ id, patch }) => batch.update(userDoc(uid, 'elements', id), patch))
+    try {
+      await batch.commit()
+      succeededIds.push(...chunk.map(c => c.id))
+    } catch (error) {
+      return { succeededIds, failedAt: chunk.map(c => c.id), error }
+    }
+  }
+  return { succeededIds, failedAt: null, error: null }
+}
+
 // ── Photos ────────────────────────────────────────────────────────────────────
 
 export async function fsLoadPhotos(uid, notebookId) {

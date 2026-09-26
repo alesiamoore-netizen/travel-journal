@@ -3,6 +3,7 @@ import { useEditorStore } from '../../store/editorStore'
 import { THEME_FONTS, loadFont } from '../../utils/fonts'
 import { THEMES, THEME_CATEGORIES } from '../../data/themes'
 import { TEXTURES, getTextureStyle } from '../../utils/textures'
+import ThemeDetailModal from './ThemeDetailModal'
 
 function Field({ label, children }) {
   return (
@@ -17,6 +18,7 @@ export default function ThemePanel() {
   const { notebook, updateTheme } = useEditorStore()
   const theme = notebook?.theme ?? {}
   const [category, setCategory] = useState('Occasion')
+  const [previewThemeId, setPreviewThemeId] = useState(null)
 
   const filteredThemes = THEMES.filter(t => t.category === category)
 
@@ -102,10 +104,22 @@ export default function ThemePanel() {
                   <span className="text-white" style={{ fontSize: 7 }}>✓</span>
                 </div>
               )}
+              <span
+                role="button"
+                title="Preview this theme"
+                onClick={e => { e.stopPropagation(); setPreviewThemeId(preset.id) }}
+                className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-white/80 flex items-center justify-center text-[10px] hover:bg-white transition-colors"
+              >
+                👁
+              </span>
             </button>
           ))}
         </div>
       </Field>
+
+      {previewThemeId && (
+        <ThemeDetailModal initialThemeId={previewThemeId} onClose={() => setPreviewThemeId(null)} />
+      )}
 
       {/* Colors */}
       <Field label="Page background">

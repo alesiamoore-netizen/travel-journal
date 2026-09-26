@@ -6,7 +6,9 @@ import { fsSavePhoto, fsLoadPhotos } from '../../firebase/firestoreHelpers'
 import { STICKER_LIST } from './elements/StickerElement'
 import { TEXT_STYLES, applyTextStyle } from '../../data/textStyles'
 import { LAYOUTS, LAYOUT_CATEGORIES } from '../../data/layouts'
+import { THEMES, orderStickersForTheme } from '../../data/themes'
 import AiCaptionButton from './AiCaptionButton'
+import ThemeDetailModal from './ThemeDetailModal'
 
 // ── Shared Drawer shell ────────────────────────────────────────────────────────
 function Drawer({ open, onClose, title, onBack, children }) {
@@ -135,15 +137,35 @@ function LayoutThumb({ elements }) {
 }
 
 function LayoutsDrawer({ onClose }) {
-  const { applyLayout } = useEditorStore()
-  const [cat, setCat] = useState('Basic')
+  const { applyLayout, applyThemedLayout, notebook } = useEditorStore()
+  const theme = THEMES.find(t => t.id === notebook?.theme?.themeId)
+  const hasThemeContent = !!(theme?.covers?.length || theme?.layouts?.length)
+  const themeCatLabel = hasThemeContent ? `${theme.icon} ${theme.label}` : null
+  const [cat, setCat] = useState(themeCatLabel ?? 'Basic')
+  const categories = [...(themeCatLabel ? [themeCatLabel] : []), ...LAYOUT_CATEGORIES]
+  const isThemeCat = hasThemeContent && cat === themeCatLabel
+
+  const themeGroups = isThemeCat
+    ? Object.entries([...theme.covers, ...theme.layouts].reduce((acc, item) => {
+        const g = item.group ?? 'Layouts'
+        ;(acc[g] ??= []).push(item)
+        return acc
+      }, {}))
+    : []
+
   const filtered = LAYOUTS.filter(l => l.category === cat)
+
+  const handlePick = (item) => {
+    if (isThemeCat) applyThemedLayout(item, theme, notebook?.theme?.decorationLevel ?? 'standard')
+    else applyLayout(item)
+    onClose()
+  }
 
   return (
     <Drawer open title="Layouts" onClose={onClose}>
       {/* Category tabs */}
       <div className="flex gap-1.5 px-4 pt-3 pb-1 overflow-x-auto flex-shrink-0 scrollbar-hide">
-        {LAYOUT_CATEGORIES.map(c => (
+        {categories.map(c => (
           <button key={c} onClick={() => setCat(c)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
               cat === c ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600'}`}>
@@ -151,25 +173,46 @@ function LayoutsDrawer({ onClose }) {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-3 p-4">
-        {filtered.map(layout => (
-          <button key={layout.id}
-            onClick={() => { applyLayout(layout); onClose() }}
-            className="flex flex-col items-center gap-1.5 group">
-            <div className="w-full rounded-lg overflow-hidden border border-stone-200 group-active:border-amber-400 transition-colors aspect-[52/70]">
-              <LayoutThumb elements={layout.elements} />
+      {isThemeCat ? (
+        <div className="p-4 space-y-5">
+          {themeGroups.map(([group, items]) => (
+            <div key={group}>
+              <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-2">{group}</p>
+              <div className="grid grid-cols-3 gap-3">
+                {items.map(layout => (
+                  <button key={layout.id} onClick={() => handlePick(layout)} className="flex flex-col items-center gap-1.5 group">
+                    <div className="w-full rounded-lg overflow-hidden border border-stone-200 group-active:border-amber-400 transition-colors aspect-[52/70]">
+                      <LayoutThumb elements={layout.elements} />
+                    </div>
+                    <span className="text-[10px] text-stone-500 text-center leading-tight">{layout.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <span className="text-[10px] text-stone-500 text-center leading-tight">{layout.name}</span>
-          </button>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3 p-4">
+          {filtered.map(layout => (
+            <button key={layout.id}
+              onClick={() => handlePick(layout)}
+              className="flex flex-col items-center gap-1.5 group">
+              <div className="w-full rounded-lg overflow-hidden border border-stone-200 group-active:border-amber-400 transition-colors aspect-[52/70]">
+                <LayoutThumb elements={layout.elements} />
+              </div>
+              <span className="text-[10px] text-stone-500 text-center leading-tight">{layout.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </Drawer>
   )
 }
 
 // ── Sticker picker ────────────────────────────────────────────────────────────
 function StickerPickerDrawer({ onClose }) {
-  const { addElement, updateElement } = useEditorStore()
+  const { addElement, updateElement, notebook } = useEditorStore()
+  const orderedStickers = orderStickersForTheme(notebook?.theme?.themeId, STICKER_LIST)
   const pick = async (stickerId) => {
     onClose()
     const el = await addElement('sticker')
@@ -178,7 +221,7 @@ function StickerPickerDrawer({ onClose }) {
   return (
     <Drawer open title="Pick a Sticker" onClose={onClose}>
       <div className="grid grid-cols-4 gap-2 p-4">
-        {STICKER_LIST.map(s => (
+        {orderedStickers.map(s => (
           <button key={s.id} onClick={() => pick(s.id)}
             className="py-3 rounded-xl border border-stone-200 bg-stone-50 text-xs font-medium text-stone-700 active:bg-amber-50 active:border-amber-300 transition-colors">
             {s.label}
@@ -336,6 +379,7 @@ function MobileInspectorDrawer({ element, onClose }) {
   const { data } = element
   const update = patch => updateElement(element.id, { data: { ...data, ...patch } })
   const accent = notebook?.theme?.accentColor ?? '#c0813a'
+  const orderedStickers = orderStickersForTheme(notebook?.theme?.themeId, STICKER_LIST)
 
   const handleDelete = () => { deleteElement(element.id); onClose() }
 
@@ -446,7 +490,7 @@ function MobileInspectorDrawer({ element, onClose }) {
         {element.type === 'sticker' && (<>
           <Sec label="Sticker">
             <BtnGrid cols={3}>
-              {STICKER_LIST.map(s => (
+              {orderedStickers.map(s => (
                 <Tog key={s.id} on={(data.stickerId??'compass')===s.id} onClick={()=>update({stickerId:s.id})}>{s.label}</Tog>
               ))}
             </BtnGrid>
@@ -634,6 +678,7 @@ function Tog({ on, onClick, children }) {
 // ── Bottom bar ────────────────────────────────────────────────────────────────
 export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, exporting }) {
   const [drawer, setDrawer] = useState(null)
+  const [showTheme, setShowTheme] = useState(false)
   const { pages, currentPageId, selectedId, elements } = useEditorStore()
   const currentIdx = pages.findIndex(p => p.id === currentPageId)
   const selectedEl = elements.find(e => e.id === selectedId) ?? null
@@ -715,6 +760,18 @@ export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, expor
               </div>
             </button>
             <button
+              onClick={() => { setShowTheme(true); setDrawer(null) }}
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-700 flex items-center justify-center flex-shrink-0 text-white text-lg">
+                🎨
+              </div>
+              <div className="text-left">
+                <div className="font-semibold text-stone-800">Journal Theme</div>
+                <div className="text-xs text-stone-500">Browse and preview themes, colors, fonts</div>
+              </div>
+            </button>
+            <button
               onClick={() => { onShare?.(); setDrawer(null) }}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
             >
@@ -746,6 +803,7 @@ export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, expor
           </div>
         </Drawer>
       )}
+      {showTheme && <ThemeDetailModal onClose={() => setShowTheme(false)} />}
     </>
   )
 }

@@ -1,8 +1,179 @@
 export const THEME_CATEGORIES = ['Occasion', 'Mood']
 
 // `stickers`: curated subset of STICKER_LIST ids, shown first when this theme is active.
-// `templates`: suggested page-template ids (from layouts.js TEMPLATE_CATEGORIES entries),
-// surfaced first when this theme is active.
+// `templates`: suggested page-template ids (from layouts.js TEMPLATE_CATEGORIES entries) — legacy,
+// unused by the UI (kept for potential future use, not wired to anything currently).
+//
+// `tokens` (optional — only Backpacking has one in this pass): a theme's semantic color palette.
+// `covers`/`layouts` (optional, Backpacking only): theme-coordinated content, same {id,name,icon,
+// group,elements} shape as a layouts.js entry, but element `data` fields may reference a token by
+// name with a `$` prefix (e.g. `'$heading'`) instead of a literal hex — resolved once, at apply
+// time, by `resolveThemedElements()` below. Elements may also carry `minDecorationLevel:
+// 'standard'|'rich'` (absent = always included at any level).
+//
+// `assets` (optional, reserved for a future art pass — nothing reads this yet):
+//   { coverArtwork: [], backgroundTextures: [], mapOverlays: [], cornerDecorations: [],
+//     stickerSetId: null, dividerSetId: null }
+
+// ─── Backpacking content authoring ──────────────────────────────────────
+
+function doc(text) {
+  return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] }
+}
+
+const H = 'Merriweather'
+const B = 'Nunito'
+
+function BACKPACKING_COVERS() {
+  return [
+    {
+      id: 'cover-trailhead', name: 'Trailhead', icon: '🏕️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${H}, serif`,
+          overlayColor: '#1a2e1a66', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 1, y: 1, w: 3, h: 3 }, data: { stickerId: 'compass', color: '$paper', rotation: -10, opacity: 0.9 } },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'ornate', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 8, y: 2, w: 2, h: 2 }, data: { stickerId: 'arrow', color: '$paper', rotation: 20, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cover-basecamp', name: 'Basecamp', icon: '⛺', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'left', titleFont: `${H}, serif`,
+          overlayColor: '#2d4a3277', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 0, y: 8, w: 12, h: 1 }, data: { style: 'wave', color: '$paper' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 9, y: 1, w: 2, h: 2 }, data: { stickerId: 'pin', color: '$paper', rotation: 8, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cover-summit', name: 'Summit', icon: '🏔️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${H}, serif`,
+          overlayColor: '#1a2e1a55', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'star', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'ornate', color: '$accentSecondary' }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
+function BACKPACKING_LAYOUTS() {
+  return [
+    // ─── PHOTO ───────────────────────────────────────────────
+    {
+      id: 'bp-hero-photo', name: 'Hero Photo', icon: '🏞️', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Trail Name'), fontFamily: H, fontSize: 28, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Location · Date'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'compass', color: '$paper', rotation: -12, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 1, y: 14, w: 10, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bp-four-collage', name: 'Trail Snapshots', icon: '🖼️', group: 'Photo',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Trail Snapshots'), fontFamily: H, fontSize: 26, color: '$heading' } },
+        { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 12 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
+        { type: 'text', grid: { x: 1, y: 14, w: 10, h: 2 }, data: { textStyle: 'caption', content: doc('A few moments from the day…'), fontFamily: B, fontSize: 10, color: '$muted' } },
+      ],
+    },
+    {
+      id: 'bp-sunrise-sunset', name: 'Sunrise / Sunset', icon: '🌄', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 10 }, data: { fit: 'cover' } },
+        { type: 'weather', grid: { x: 0, y: 10, w: 5, h: 4 }, data: {} },
+        { type: 'text', grid: { x: 5, y: 10, w: 7, h: 4 }, data: { textStyle: 'body', content: doc('Colors in the sky, how it felt to watch…'), fontFamily: B, fontSize: 12, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 8, w: 3, h: 3 }, data: { stickerId: 'sun', color: '$accentSecondary', rotation: -15, opacity: 0.85 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'wave', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── WRITING ─────────────────────────────────────────────
+    {
+      id: 'bp-photo-writing', name: 'Photo + Story', icon: '📓', group: 'Writing',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1 } },
+        { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('Day on the Trail'), fontFamily: H, fontSize: 22, color: '$heading' } },
+        { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('What the trail looked like, how it felt, who we met…'), fontFamily: B, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'arrow', color: '$accent', rotation: 15, opacity: 0.9 }, minDecorationLevel: 'standard' },
+      ],
+    },
+    {
+      id: 'bp-field-notes', name: 'Daily Field Notes', icon: '📝', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3 · Mile 24'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Field Notes'), fontFamily: H, fontSize: 26, color: '$heading' } },
+        { type: 'divider', grid: { x: 0, y: 3, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 4, w: 12, h: 12 }, data: { textStyle: 'body', content: doc('Weather, trail conditions, wildlife spotted…'), fontFamily: B, fontSize: 14, color: '$body' } },
+      ],
+    },
+    {
+      id: 'bp-text-focused', name: 'Trail Journal', icon: '✍️', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 1, y: 0, w: 10, h: 2 }, data: { textStyle: 'heading', content: doc('Trail Journal'), fontFamily: H, fontSize: 30, color: '$heading' } },
+        { type: 'text', grid: { x: 1, y: 2, w: 10, h: 1 }, data: { textStyle: 'dateline', content: doc('Location · Date'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 10, h: 13 }, data: { textStyle: 'body', content: doc('Just write…'), fontFamily: B, fontSize: 15, color: '$body' } },
+      ],
+    },
+
+    // ─── MAP & ITINERARY ─────────────────────────────────────
+    {
+      id: 'bp-route-map', name: 'The Route', icon: '🗺️', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Route'), fontFamily: H, fontSize: 26, color: '$heading' } },
+        { type: 'map', grid: { x: 0, y: 2, w: 12, h: 8 }, data: { tileStyle: 'voyager', mode: 'route', showRoute: true, showPins: true, routeColor: '$mapRoute', pinColor: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 2, w: 3, h: 3 }, data: { stickerId: 'compass', color: '$paper', rotation: -8, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 6 }, data: { textStyle: 'body', content: doc('Distance · Elevation gain · Terrain notes…'), fontFamily: B, fontSize: 13, color: '$body' } },
+      ],
+    },
+    {
+      id: 'bp-timeline', name: 'Trip Itinerary', icon: '🧭', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Trip Itinerary'), fontFamily: H, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 1'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Trailhead to first camp…'), fontFamily: B, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 2'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('The long ridge climb…'), fontFamily: B, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Down to the trailhead…'), fontFamily: B, fontSize: 12, color: '$body' } },
+      ],
+    },
+
+    // ─── KEEPSAKE ────────────────────────────────────────────
+    {
+      id: 'bp-keepsake', name: 'Trail Mementos', icon: '🎫', group: 'Keepsake',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Trail Mementos'), fontFamily: H, fontSize: 26, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 0, y: 2, w: 6, h: 6 }, data: { label: 'Trail map / permit', hint: 'Tape or glue here', style: 'dashed', borderColor: '$keepsakeBorder' } },
+        { type: 'keepsake', grid: { x: 6, y: 2, w: 6, h: 6 }, data: { label: 'Ticket / pass', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' } },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 7 }, data: { textStyle: 'body', content: doc('Stories behind the stuff…'), fontFamily: B, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 4, h: 2 }, data: { stickerId: 'tape', color: '$accentSecondary', rotation: -3, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── OPENING & DIVIDERS ──────────────────────────────────
+    {
+      id: 'bp-chapter-divider', name: 'Chapter Divider', icon: '🪵', group: 'Opening & Dividers',
+      elements: [
+        { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 }, data: { style: 'ornate', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 6, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Chapter Name'), fontFamily: H, fontSize: 36, color: '$heading' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Location · Date'), fontFamily: B, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 12, w: 8, h: 1 }, data: { style: 'ornate', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'compass', color: '$accent', rotation: 0, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
 export const THEMES = [
   // ─── OCCASION ──────────────────────────────────────────────
   {
@@ -39,11 +210,27 @@ export const THEMES = [
   },
   {
     id: 'backpacking', label: 'Backpacking', category: 'Occasion', icon: '🎒',
-    accentColor: '#16a34a', accentColorSecondary: '#92400e',
-    backgroundColor: '#f0fdf4', backgroundTexture: null,
+    // Reference theme — the only one with tokens/covers/layouts authored so far.
+    accentColor: '#3a5a40', accentColorSecondary: '#c1440e',
+    backgroundColor: '#f5f0e4', backgroundTexture: 'grain',
     fontHeading: 'Merriweather', fontBody: 'Nunito',
     stickers: ['compass', 'arrow', 'wave', 'pin', 'plane'],
     templates: ['hike', 'sunset', 'market'],
+    tokens: {
+      paper: '#f5f0e4',
+      surface: '#ece4d3',
+      heading: '#2d4a32',
+      body: '#3a3630',
+      muted: '#7a7266',
+      accent: '#3a5a40',
+      accentSecondary: '#c1440e',
+      border: '#c9973e',
+      mapRoute: '#3a5a40',
+      photoFrame: '#f5f0e4',
+      keepsakeBorder: '#4a5568',
+    },
+    covers: BACKPACKING_COVERS(),
+    layouts: BACKPACKING_LAYOUTS(),
   },
   {
     id: 'winter-getaway', label: 'Winter Getaway', category: 'Occasion', icon: '❄️',
@@ -145,10 +332,125 @@ export const THEMES = [
   },
 ]
 
-export function getThemeStickerOrder(theme) {
+// ─── Sticker ordering ──────────────────────────────────────────────────────
+
+export function orderStickersForTheme(themeId, stickerList) {
+  const theme = THEMES.find(t => t.id === themeId)
   const curated = theme?.stickers ?? []
-  return (allStickers) => [
-    ...curated.map(id => allStickers.find(s => s.id === id)).filter(Boolean),
-    ...allStickers.filter(s => !curated.includes(s.id)),
+  if (!curated.length) return stickerList
+  const curatedSet = new Set(curated)
+  return [
+    ...curated.map(id => stickerList.find(s => s.id === id)).filter(Boolean),
+    ...stickerList.filter(s => !curatedSet.has(s.id)),
   ]
 }
+
+// ─── Path helpers (dependency-free get/set by dot-path) ────────────────────
+
+export function getByPath(obj, path) {
+  return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj)
+}
+
+export function setByPath(obj, path, value) {
+  const keys = path.split('.')
+  let cur = obj
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (cur[keys[i]] == null || typeof cur[keys[i]] !== 'object') cur[keys[i]] = {}
+    cur = cur[keys[i]]
+  }
+  cur[keys[keys.length - 1]] = value
+}
+
+// ─── Decoration levels ───────────────────────────────────────────────────
+
+const LEVEL_RANK = { minimal: 0, standard: 1, rich: 2 }
+
+// Resolves a theme layout/cover's raw `elements` (with `$token` color refs and optional
+// `minDecorationLevel`) into real, literal-valued elements ready to save — filtering by
+// decoration level and recording per-field provenance (`themeTokenProvenance`) for the
+// restyle engine. Element renderers only ever see the resolved literals in `data`.
+export function resolveThemedElements(rawElements, theme, layoutId, decorationLevel = 'standard') {
+  const rank = LEVEL_RANK[decorationLevel] ?? LEVEL_RANK.standard
+  return rawElements
+    .filter(el => rank >= (LEVEL_RANK[el.minDecorationLevel] ?? LEVEL_RANK.minimal))
+    .map(el => {
+      const data = JSON.parse(JSON.stringify(el.data ?? {}))
+      const themeTokenProvenance = {}
+
+      function walk(node, prefix) {
+        for (const key of Object.keys(node)) {
+          const val = node[key]
+          const path = prefix ? `${prefix}.${key}` : key
+          if (typeof val === 'string' && val.startsWith('$')) {
+            const token = val.slice(1)
+            const resolved = theme.tokens?.[token]
+            if (resolved) {
+              node[key] = resolved
+              themeTokenProvenance[`data.${path}`] = { token, sourceThemeId: theme.id, appliedValue: resolved }
+            }
+          } else if (val && typeof val === 'object' && !Array.isArray(val)) {
+            walk(val, path)
+          }
+        }
+      }
+      walk(data, '')
+
+      const hasProvenance = Object.keys(themeTokenProvenance).length > 0
+      return {
+        type: el.type,
+        grid: { ...el.grid },
+        data,
+        ...(hasProvenance ? {
+          sourceThemeId: theme.id,
+          sourceTemplateId: layoutId,
+          themeManaged: true,
+          themeTokenProvenance,
+        } : {}),
+      }
+    })
+}
+
+// ─── Restyle engine (pure — no Firestore here) ──────────────────────────
+
+// Given one saved element and a target theme, returns null if the element isn't
+// theme-managed, {unsupported: true} if the target theme has no usable token system,
+// or a full restyle result: which fields were restyled/preserved/unsupported, and the
+// element's new `data`/`themeTokenProvenance`/`sourceThemeId` if anything changed.
+export function computeElementRestyle(element, targetTheme) {
+  if (!element.themeManaged || !element.themeTokenProvenance) return null
+  if (!targetTheme?.tokens) return { unsupported: true }
+
+  const newData = JSON.parse(JSON.stringify(element.data ?? {}))
+  const newProvenance = { ...element.themeTokenProvenance }
+  const restyledPaths = []
+  const preservedPaths = []
+  const unsupportedPaths = []
+  let anyChanged = false
+
+  for (const [path, prov] of Object.entries(element.themeTokenProvenance)) {
+    const dataPath = path.startsWith('data.') ? path.slice(5) : path
+    const current = getByPath(newData, dataPath)
+    if (current !== prov.appliedValue) {
+      preservedPaths.push(path)
+      continue
+    }
+    const targetValue = targetTheme.tokens[prov.token]
+    if (targetValue == null) {
+      unsupportedPaths.push(path)
+      continue
+    }
+    setByPath(newData, dataPath, targetValue)
+    newProvenance[path] = { token: prov.token, sourceThemeId: targetTheme.id, appliedValue: targetValue }
+    restyledPaths.push(path)
+    anyChanged = true
+  }
+
+  return {
+    changed: anyChanged,
+    data: newData,
+    themeTokenProvenance: newProvenance,
+    sourceThemeId: anyChanged ? targetTheme.id : element.sourceThemeId,
+    restyledPaths, preservedPaths, unsupportedPaths,
+  }
+}
+

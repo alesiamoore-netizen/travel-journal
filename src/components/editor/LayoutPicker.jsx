@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LAYOUTS, LAYOUT_CATEGORIES } from '../../data/layouts'
+import { THEMES } from '../../data/themes'
 import { useEditorStore } from '../../store/editorStore'
 
 const COLS = 12
@@ -7,8 +8,6 @@ const ROWS = 16
 const SW = 60
 const SH = 80
 const GAP = 0.8
-
-const TYPE_COLOR = { image: '#c0813a', text: '#d6d3d1', map: '#8db4a0' }
 
 function LayoutThumbnail({ elements }) {
   if (elements.length === 0) {
@@ -75,23 +74,41 @@ function LayoutThumbnail({ elements }) {
 }
 
 export default function LayoutPicker({ onClose }) {
-  const { elements, applyLayout } = useEditorStore()
+  const { elements, applyLayout, applyThemedLayout, notebook } = useEditorStore()
+  const theme = THEMES.find(t => t.id === notebook?.theme?.themeId)
+  const hasThemeContent = !!(theme?.covers?.length || theme?.layouts?.length)
+  const themeCatLabel = hasThemeContent ? `${theme.icon} ${theme.label}` : null
+
   const [category, setCategory] = useState('All')
   const [confirming, setConfirming] = useState(null)
+  const isThemeCat = hasThemeContent && category === themeCatLabel
 
+  const categories = ['All', ...(themeCatLabel ? [themeCatLabel] : []), ...LAYOUT_CATEGORIES]
   const filtered = category === 'All' ? LAYOUTS : LAYOUTS.filter(l => l.category === category)
+  const themeGroups = isThemeCat
+    ? Object.entries([...theme.covers, ...theme.layouts].reduce((acc, item) => {
+        const g = item.group ?? 'Layouts'
+        ;(acc[g] ??= []).push(item)
+        return acc
+      }, {}))
+    : []
+
+  const doApply = (layout) => {
+    if (isThemeCat) applyThemedLayout(layout, theme, notebook?.theme?.decorationLevel ?? 'standard')
+    else applyLayout(layout)
+  }
 
   const handleSelect = (layout) => {
     if (elements.length > 0 && layout.elements.length > 0) {
       setConfirming(layout)
     } else {
-      applyLayout(layout)
+      doApply(layout)
       onClose()
     }
   }
 
   const handleConfirm = () => {
-    if (confirming) { applyLayout(confirming); onClose() }
+    if (confirming) { doApply(confirming); onClose() }
   }
 
   return (
@@ -114,12 +131,12 @@ export default function LayoutPicker({ onClose }) {
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-1 px-5 pt-3 pb-3 flex-shrink-0">
-          {['All', ...LAYOUT_CATEGORIES].map(cat => (
+        <div className="flex gap-1 px-5 pt-3 pb-3 flex-shrink-0 overflow-x-auto">
+          {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+              className={`px-3 py-1 text-xs rounded-full font-medium transition-colors flex-shrink-0 ${
                 category === cat
                   ? 'bg-amber-700 text-white'
                   : 'text-stone-500 hover:bg-stone-100'
@@ -132,22 +149,48 @@ export default function LayoutPicker({ onClose }) {
 
         {/* Grid */}
         <div className="flex-1 overflow-y-auto px-5 pb-5 min-h-0">
-          <div className="grid grid-cols-4 gap-4">
-            {filtered.map(layout => (
-              <button
-                key={layout.id}
-                onClick={() => handleSelect(layout)}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full aspect-[3/4] rounded-lg overflow-hidden border-2 border-stone-200 group-hover:border-amber-500 transition-colors shadow-sm group-hover:shadow-md">
-                  <LayoutThumbnail elements={layout.elements} />
+          {isThemeCat ? (
+            <div className="space-y-6">
+              {themeGroups.map(([group, items]) => (
+                <div key={group}>
+                  <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">{group}</p>
+                  <div className="grid grid-cols-4 gap-4">
+                    {items.map(layout => (
+                      <button
+                        key={layout.id}
+                        onClick={() => handleSelect(layout)}
+                        className="flex flex-col items-center gap-2 group"
+                      >
+                        <div className="w-full aspect-[3/4] rounded-lg overflow-hidden border-2 border-stone-200 group-hover:border-amber-500 transition-colors shadow-sm group-hover:shadow-md">
+                          <LayoutThumbnail elements={layout.elements} />
+                        </div>
+                        <span className="text-xs text-stone-600 group-hover:text-amber-700 font-medium text-center leading-tight">
+                          {layout.icon} {layout.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <span className="text-xs text-stone-600 group-hover:text-amber-700 font-medium text-center leading-tight">
-                  {layout.name}
-                </span>
-              </button>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-4">
+              {filtered.map(layout => (
+                <button
+                  key={layout.id}
+                  onClick={() => handleSelect(layout)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="w-full aspect-[3/4] rounded-lg overflow-hidden border-2 border-stone-200 group-hover:border-amber-500 transition-colors shadow-sm group-hover:shadow-md">
+                    <LayoutThumbnail elements={layout.elements} />
+                  </div>
+                  <span className="text-xs text-stone-600 group-hover:text-amber-700 font-medium text-center leading-tight">
+                    {layout.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Replace confirmation overlay */}

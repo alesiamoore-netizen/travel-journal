@@ -3,7 +3,7 @@ import { loadFont } from '../utils/fonts'
 import {
   fsLoadNotebooks, fsLoadPages, fsLoadElements, fsSavePage, fsUpdatePage, fsDeletePage,
   fsSaveElement, fsUpdateElement, fsDeleteElement, fsReplacePageElements,
-  fsUpdatePageOrders, fsUpdateNotebook,
+  fsUpdatePageOrders, fsUpdateNotebook, fsLoadNotebookElements, fsBatchUpdateElements,
 } from '../firebase/firestoreHelpers'
 import {
   pushElement, deleteElement as fsCollabDeleteEl,
@@ -12,6 +12,7 @@ import {
   setPresence, clearPresence,
 } from '../firebase/collab'
 import { useCollabStore } from './collabStore'
+import { THEMES, resolveThemedElements, computeElementRestyle } from '../data/themes'
 
 function defaultData(type) {
   if (type === 'text') return {
@@ -215,6 +216,88 @@ export const useEditorStore = create((set, get) => ({
     set(s => ({ notebook: { ...s.notebook, theme: newTheme, updatedAt } }))
     const cid = collabId()
     if (cid) pushJournal({ ...get().notebook }).catch(console.warn)
+  },
+
+  // ── Theme restyle (see plan: field-level applied-value provenance, batched writes) ────────
+
+  // Read-only: computes exactly what a restyle-to-`targetThemeId` would do, without writing
+  // anything. `supported: false` means the target theme has no `tokens` map yet — restyle isn't
+  // offered for it at all, only the base color/font change is available.
+  restyleDryRun: async (targetThemeId) => {
+    const { uid, notebook } = get()
+    if (!uid || !notebook) return null
+    const targetTheme = THEMES.find(t => t.id === targetThemeId)
+    if (!targetTheme?.tokens) {
+      return { targetTheme, supported: false, plannedUpdates: [], elementCount: 0, pageCount: 0, restyledFieldCount: 0, preservedFieldCount: 0, unsupportedFieldCount: 0, bySourceTheme: {} }
+    }
+    const allElements = await fsLoadNotebookElements(uid, notebook.id)
+    const themeManaged = allElements.filter(e => e.themeManaged)
+
+    let restyledFieldCount = 0, preservedFieldCount = 0, unsupportedFieldCount = 0
+    const bySourceTheme = {}
+    const plannedUpdates = []
+    const touchedPageIds = new Set()
+
+    for (const el of themeManaged) {
+      const result = computeElementRestyle(el, targetTheme)
+      if (!result || result.unsupported) continue
+      preservedFieldCount += result.preservedPaths.length
+      unsupportedFieldCount += result.unsupportedPaths.length
+      if (result.changed) {
+        restyledFieldCount += result.restyledPaths.length
+        plannedUpdates.push({ id: el.id, patch: { data: result.data, themeTokenProvenance: result.themeTokenProvenance, sourceThemeId: result.sourceThemeId } })
+        touchedPageIds.add(el.pageId)
+        const src = el.sourceThemeId ?? 'unknown'
+        bySourceTheme[src] = (bySourceTheme[src] ?? 0) + 1
+      }
+    }
+
+    return {
+      targetTheme, supported: true, plannedUpdates,
+      elementCount: plannedUpdates.length,
+      pageCount: touchedPageIds.size,
+      restyledFieldCount, preservedFieldCount, unsupportedFieldCount,
+      bySourceTheme,
+    }
+  },
+
+  // Commits a dry run's `plannedUpdates` via batched writes. Safe to call again on the same
+  // dry-run result if a previous attempt partially failed — every write is the full target
+  // state, not a delta, so re-applying an already-succeeded element is a no-op.
+  commitRestyle: async (dryRunResult) => {
+    const { uid, currentPageId } = get()
+    if (!uid || !dryRunResult?.plannedUpdates?.length) return { ok: true, succeededIds: [], failedAt: null, error: null }
+    const result = await fsBatchUpdateElements(uid, dryRunResult.plannedUpdates)
+    const touchedCurrentPage = dryRunResult.plannedUpdates.some(u => get().elements.some(e => e.id === u.id))
+    if (touchedCurrentPage) {
+      const fresh = await fsLoadElements(uid, currentPageId)
+      set({ elements: fresh })
+    }
+    return { ok: !result.error, ...result }
+  },
+
+  // Orchestrates the two theme-change choices offered in the UI. `restyle: true` also restyles
+  // theme-managed elements — write order matters: element-restyle batches must fully succeed
+  // *before* the notebook-level theme (background/fonts/texture) is updated, so a partial
+  // element-restyle failure is never hidden behind an already-changed background.
+  changeJournalTheme: async (targetTheme, { restyle = false, dryRun = null } = {}) => {
+    if (restyle) {
+      const plan = dryRun ?? await get().restyleDryRun(targetTheme.id)
+      if (plan?.plannedUpdates?.length) {
+        const result = await get().commitRestyle(plan)
+        if (result.error) return { ok: false, stage: 'restyle', ...result }
+      }
+    }
+    await get().updateTheme({
+      themeId: targetTheme.id,
+      accentColor: targetTheme.accentColor,
+      accentColorSecondary: targetTheme.accentColorSecondary,
+      backgroundColor: targetTheme.backgroundColor,
+      backgroundTexture: targetTheme.backgroundTexture,
+      fontHeading: targetTheme.fontHeading,
+      fontBody: targetTheme.fontBody,
+    })
+    return { ok: true }
   },
 
   loadNotebook: async (uid, notebookId) => {
@@ -422,12 +505,27 @@ export const useEditorStore = create((set, get) => ({
         type: el.type,
         grid: { ...el.grid },
         data: { ...defaultData(el.type), ...inferredData, ...(el.data ?? {}) },
+        // Carried through when the caller pre-resolved a themed layout (see applyThemedLayout) —
+        // absent for plain layouts, exactly as before.
+        ...(el.themeManaged ? {
+          sourceThemeId: el.sourceThemeId,
+          sourceTemplateId: el.sourceTemplateId,
+          themeManaged: true,
+          themeTokenProvenance: el.themeTokenProvenance,
+        } : {}),
       }
     })
     await fsReplacePageElements(uid, currentPageId, notebook.id, newElements)
     set({ elements: newElements, selectedId: null })
     const cid = collabId()
     if (cid) pushAllElements(cid, newElements).catch(console.warn)
+  },
+
+  // Resolves a theme's cover/layout definition ($token refs -> literal colors, decoration-level
+  // filtering, provenance stamping) then applies it exactly like any other layout.
+  applyThemedLayout: async (layoutDef, theme, decorationLevel = 'standard') => {
+    const resolved = resolveThemedElements(layoutDef.elements, theme, layoutDef.id, decorationLevel)
+    return get().applyLayout({ elements: resolved })
   },
 
   updatePage: async (pageId, patch) => {

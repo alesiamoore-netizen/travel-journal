@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { fsLoadPhotos, fsLoadElements } from '../../firebase/firestoreHelpers'
 import { subscribePresence } from '../../firebase/collab'
 import LayoutPicker from './LayoutPicker'
+import ThemeDetailModal from './ThemeDetailModal'
 
 function PhotoLibrary({ notebookId, onUse }) {
   const { user } = useAuth()
@@ -81,6 +82,7 @@ export default function Sidebar() {
   const { pages, currentPageId, notebook, switchPage, addPage, insertPageAfter, deletePage, movePage, reorderPages, duplicatePage, addElement, elements, selectedId, updateElement, uid } = useEditorStore()
   const { user } = useAuth()
   const [showLayouts, setShowLayouts] = useState(false)
+  const [showTheme, setShowTheme] = useState(false)
   const [pageElements, setPageElements] = useState({})
   const [sideTab, setSideTab] = useState('pages') // 'pages' | 'photos'
   const [searchOpen, setSearchOpen] = useState(false)
@@ -143,12 +145,13 @@ export default function Sidebar() {
   return (
     <aside className="w-48 bg-white border-r border-stone-200 flex flex-col flex-shrink-0 overflow-hidden">
       {showLayouts && <LayoutPicker onClose={() => setShowLayouts(false)} />}
+      {showTheme && <ThemeDetailModal onClose={() => setShowTheme(false)} />}
 
-      {/* Layouts button */}
-      <div className="p-2 border-b border-stone-100 flex-shrink-0">
+      {/* Layouts / Theme buttons */}
+      <div className="p-2 border-b border-stone-100 flex-shrink-0 flex gap-1.5">
         <button
           onClick={() => setShowLayouts(true)}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors text-xs font-semibold tracking-wide"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors text-xs font-semibold tracking-wide"
         >
           <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="currentColor">
             <rect x="1" y="1" width="6" height="6" rx="1"/>
@@ -157,6 +160,12 @@ export default function Sidebar() {
             <rect x="9" y="9" width="6" height="6" rx="1"/>
           </svg>
           Layouts
+        </button>
+        <button
+          onClick={() => setShowTheme(true)}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors text-xs font-semibold tracking-wide"
+        >
+          🎨 Theme
         </button>
       </div>
 
