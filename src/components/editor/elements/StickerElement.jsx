@@ -23,6 +23,8 @@ export const STICKER_LIST = [
   { id: 'taxi',     label: 'Taxi' },
   { id: 'palmtree', label: 'Palm Tree' },
   { id: 'umbrella', label: 'Umbrella' },
+  { id: 'snowflake', label: 'Snowflake' },
+  { id: 'mountain', label: 'Mountain' },
 ]
 
 function StickerSVG({ id, color }) {
@@ -238,6 +240,28 @@ function StickerSVG({ id, color }) {
         <path d="M50 4 L50 42" stroke={c} strokeWidth="1.5" strokeOpacity="0.6"/>
         <path d="M18 42 C18 24 32 10 50 8" fill={c} fillOpacity="0.22" stroke="none"/>
         <path d="M82 42 C82 24 68 10 50 8 L50 42 Z" fill={c} fillOpacity="0.35" stroke="none"/>
+      </svg>
+    )
+    case 'snowflake': return (
+      <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        {[0, 60, 120].map(deg => (
+          <g key={deg} transform={`rotate(${deg} 50 50)`}>
+            <line x1="50" y1="8" x2="50" y2="92" stroke={c} strokeWidth="2.5" strokeLinecap="round"/>
+            <path d="M50 22 L42 30 M50 22 L58 30" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+            <path d="M50 78 L42 70 M50 78 L58 70" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+            <path d="M50 42 L40 38 M50 42 L40 46" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
+            <path d="M50 58 L60 54 M50 58 L60 62" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
+          </g>
+        ))}
+        <circle cx="50" cy="50" r="3.5" fill={c}/>
+      </svg>
+    )
+    case 'mountain': return (
+      <svg viewBox="0 0 100 70" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 66 L34 18 L48 38 L60 22 L98 66 Z" fill={c} fillOpacity="0.35" stroke={c} strokeWidth="2.5" strokeLinejoin="round"/>
+        <path d="M34 18 L26 32 L34 30 L40 38 L48 38 Z" fill={c} fillOpacity="0.9"/>
+        <path d="M60 22 L53 33 L60 31 L66 38 L74 38 L60 22 Z" fill={c} fillOpacity="0.9"/>
+        <line x1="2" y1="66" x2="98" y2="66" stroke={c} strokeWidth="2" strokeOpacity="0.6"/>
       </svg>
     )
     default: return <svg viewBox="0 0 100 100" className="w-full h-full"><circle cx="50" cy="50" r="40" fill={c} fillOpacity="0.3"/></svg>

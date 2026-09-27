@@ -9,6 +9,7 @@ export const TEXTURES = [
   { id: 'roadline', label: 'Road Line' },
   { id: 'blueprint', label: 'Blueprint' },
   { id: 'wave', label: 'Wave' },
+  { id: 'snowfall', label: 'Snowfall' },
 ]
 
 export function getTextureStyle(textureId) {
@@ -76,6 +77,19 @@ export function getTextureStyle(textureId) {
         backgroundImage:
           "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath d='M0 10 Q10 2 20 10 T40 10' stroke='rgba(14,165,233,0.18)' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",
         backgroundSize: '40px 20px',
+      }
+    case 'snowfall':
+      // Sparse, varied-size soft dots at three independent scales/offsets — unlike the
+      // uniform single-size 'dots' grid above, this reads as scattered falling snow rather
+      // than a regular pattern. Blue-gray tinted to feel icy, not just gray specks.
+      return {
+        backgroundImage: [
+          'radial-gradient(circle, rgba(59,130,246,0.16) 1.4px, transparent 1.6px)',
+          'radial-gradient(circle, rgba(59,130,246,0.10) 1px, transparent 1.2px)',
+          'radial-gradient(circle, rgba(59,130,246,0.13) 1.8px, transparent 2px)',
+        ].join(', '),
+        backgroundSize: '18px 22px, 26px 30px, 42px 46px',
+        backgroundPosition: '0 0, 9px 14px, 22px 6px',
       }
     case 'topo':
       // Concentric-ring approximation of topographic contour lines.

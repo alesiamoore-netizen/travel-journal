@@ -722,6 +722,185 @@ function BEACH_LAYOUTS() {
   ]
 }
 
+// ─── Winter Getaway content authoring ───────────────────────────────────
+
+// Photo treatment / `$photoFrame` token: same closed gap as the prior three themes —
+// `captionColor` themed via `$photoFrame` on authored image layouts. No new renderer field.
+
+const WH = 'Raleway'
+const WB = 'Nunito'
+
+function WINTER_COVERS() {
+  return [
+    {
+      id: 'wg-cover-snowbound', name: 'Snowbound', icon: '❄️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${WH}, sans-serif`,
+          overlayColor: '#0b1e3d65', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'double', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 8, y: 1, w: 3, h: 3 }, data: { stickerId: 'snowflake', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-cover-alpine-lodge', name: 'Alpine Lodge', icon: '🏔️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'left', titleFont: `${WH}, sans-serif`,
+          overlayColor: '#8a6a4f60', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 0, y: 8, w: 12, h: 1 }, data: { style: 'dotted', color: '$paper' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 9, y: 1, w: 2, h: 2 }, data: { stickerId: 'mountain', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-cover-northern-lights', name: 'Northern Lights', icon: '🌌', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${WH}, sans-serif`,
+          overlayColor: '#2f6b4f55', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'star', color: '$accentSecondary', rotation: 0, opacity: 0.95 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'double', color: '$accentSecondary' }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
+function WINTER_LAYOUTS() {
+  return [
+    // ─── PHOTO ───────────────────────────────────────────────
+    {
+      id: 'wg-hero-snowy', name: 'Hero Snowy Landscape', icon: '🏔️', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover', caption: 'Fresh snow', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Mountains'), fontFamily: WH, fontSize: 28, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Resort · Date'), fontFamily: WB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'snowflake', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 1, y: 14, w: 10, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-activity', name: 'On the Slopes', icon: '⛷️', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover', caption: 'One more run', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 9, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Slopes'), fontFamily: WH, fontSize: 24, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('Which runs, how the snow was, who wiped out…'), fontFamily: WB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 7, w: 3, h: 3 }, data: { stickerId: 'mountain', color: '$accentSecondary', rotation: -8, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-cabin', name: 'Cozy Lodge', icon: '🛖', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 10 }, data: { fit: 'cover' } },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Fireside'), fontFamily: WH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 4 }, data: { textStyle: 'body', content: doc('Hot cocoa, wool socks, the fire crackling…'), fontFamily: WB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 8, w: 3, h: 3 }, data: { stickerId: 'star', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'double', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-winter-collage', name: 'Four-Photo Winter Collage', icon: '🖼️', group: 'Photo',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Snow Days'), fontFamily: WH, fontSize: 26, color: '$heading' } },
+        { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 12 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
+        { type: 'text', grid: { x: 1, y: 14, w: 10, h: 2 }, data: { textStyle: 'caption', content: doc('A few moments from the snow…'), fontFamily: WB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+
+    // ─── WRITING ─────────────────────────────────────────────
+    {
+      id: 'wg-field-notes-weather', name: 'Winter Field Notes', icon: '🌡️', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 2 · On the mountain'), fontFamily: WB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Field Notes'), fontFamily: WH, fontSize: 26, color: '$heading' } },
+        { type: 'weather', grid: { x: 0, y: 3, w: 12, h: 4 }, data: {} },
+        { type: 'divider', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 8 }, data: { textStyle: 'body', content: doc('Temperature, snowfall, how the day felt…'), fontFamily: WB, fontSize: 14, color: '$body' } },
+      ],
+    },
+    {
+      id: 'wg-photo-writing', name: 'Photo + Story', icon: '📓', group: 'Writing',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1, caption: 'Snowed in', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('Winter Notes'), fontFamily: WH, fontSize: 22, color: '$heading' } },
+        { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('The cold, the quiet, how the snow changed everything…'), fontFamily: WB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'snowflake', color: '$accent', rotation: 10, opacity: 0.9 }, minDecorationLevel: 'standard' },
+      ],
+    },
+
+    // ─── MAP & ITINERARY ─────────────────────────────────────
+    {
+      id: 'wg-mountain-map', name: 'The Resort', icon: '🗺️', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Resort'), fontFamily: WH, fontSize: 26, color: '$heading' } },
+        { type: 'map', grid: { x: 0, y: 2, w: 12, h: 8 }, data: { tileStyle: 'minimal', mode: 'pin', showPins: true, pinColor: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 2, w: 3, h: 3 }, data: { stickerId: 'mountain', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 6 }, data: { textStyle: 'body', content: doc('Trails run, elevation, our favorite lodge stop…'), fontFamily: WB, fontSize: 13, color: '$body' } },
+      ],
+    },
+    {
+      id: 'wg-itinerary', name: 'Winter Itinerary', icon: '🧭', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Winter Itinerary'), fontFamily: WH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 1'), fontFamily: WB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Arrival, gear rental, first look at the mountain…'), fontFamily: WB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 2'), fontFamily: WB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Full day on the slopes, hot cocoa break…'), fontFamily: WB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3'), fontFamily: WB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('One last morning on the mountain before heading home…'), fontFamily: WB, fontSize: 12, color: '$body' } },
+      ],
+    },
+
+    // ─── KEEPSAKE ────────────────────────────────────────────
+    {
+      id: 'wg-lift-pass-keepsake', name: 'Lift Pass & Keepsakes', icon: '🎫', group: 'Keepsake',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Lift Passes'), fontFamily: WH, fontSize: 26, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 0, y: 2, w: 6, h: 6 }, data: { label: 'Lift pass', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' } },
+        { type: 'keepsake', grid: { x: 6, y: 2, w: 6, h: 6 }, data: { label: 'Rental receipt', hint: 'Tape or glue here', style: 'dashed', borderColor: '$keepsakeBorder' } },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 7 }, data: { textStyle: 'body', content: doc('Best runs, worst falls, what we’d bring next time…'), fontFamily: WB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 4, h: 2 }, data: { stickerId: 'snowflake', color: '$accentSecondary', rotation: -3, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── OPENING & DIVIDERS ──────────────────────────────────
+    {
+      id: 'wg-trip-opening', name: 'Winter-Trip Opening Spread', icon: '❄️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 }, data: { style: 'double', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 6, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Winter Getaway'), fontFamily: WH, fontSize: 34, color: '$heading' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Mountain · Dates'), fontFamily: WB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 12, w: 8, h: 1 }, data: { style: 'double', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'snowflake', color: '$accent', rotation: 0, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-mountain-divider', name: 'Mountain Divider', icon: '🏔️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 1, y: 5, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Mountain Name'), fontFamily: WH, fontSize: 38, color: '$heading' } },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'double', color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Exploring · Date'), fontFamily: WB, fontSize: 11, color: '$muted' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 2, h: 2 }, data: { stickerId: 'mountain', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'wg-fireside-closing', name: 'Fireside Reflections', icon: '🔥', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Fireside Reflections'), fontFamily: WH, fontSize: 30, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 1, y: 3, w: 10, h: 5 }, data: { label: 'Postcard', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'double', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 10, w: 10, h: 5 }, data: { textStyle: 'body', content: doc('What we’ll remember about this winter…'), fontFamily: WB, fontSize: 14, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 14, w: 2, h: 2 }, data: { stickerId: 'star', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
 export const THEMES = [
   // ─── OCCASION ──────────────────────────────────────────────
   {
@@ -836,11 +1015,29 @@ export const THEMES = [
   },
   {
     id: 'winter-getaway', label: 'Winter Getaway', category: 'Occasion', icon: '❄️',
-    accentColor: '#3b82f6', accentColorSecondary: '#6366f1',
-    backgroundColor: '#f0f4ff', backgroundTexture: 'dots',
+    // Fifth reference theme, after Backpacking, Road Trip, City Break, and Beach Vacation.
+    accentColor: '#3b82f6', accentColorSecondary: '#d4a017',
+    backgroundColor: '#f7f9fc', backgroundTexture: 'snowfall',
     fontHeading: 'Raleway', fontBody: 'Nunito',
-    stickers: ['star', 'frame', 'pin', 'camera', 'wreath'],
+    stickers: ['snowflake', 'mountain', 'star', 'frame', 'pin', 'camera'],
     templates: ['hotel', 'sunset', 'freewrite'],
+    tokens: {
+      paper: '#f7f9fc',
+      surface: '#e7eef5',
+      heading: '#0b1e3d',
+      body: '#33404d',
+      muted: '#8a97a3',
+      accent: '#3b82f6',
+      accentSecondary: '#d4a017',
+      cranberry: '#b3253d',
+      cabinBrown: '#8a6a4f',
+      border: '#8a6a4f',
+      mapRoute: '#2f6b4f',
+      photoFrame: '#f7f9fc',
+      keepsakeBorder: '#0b1e3d',
+    },
+    covers: WINTER_COVERS(),
+    layouts: WINTER_LAYOUTS(),
   },
 
   // ─── MOOD ──────────────────────────────────────────────────
