@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { LAYOUTS, LAYOUT_CATEGORIES } from '../../data/layouts'
 import { THEMES } from '../../data/themes'
 import { useEditorStore } from '../../store/editorStore'
+import InsertMonthSpreadModal from './InsertMonthSpreadModal'
+
+const MONTH_SPREAD_CAT = '🗓️ Monthly Spread'
 
 const COLS = 12
 const ROWS = 16
@@ -94,9 +97,15 @@ export default function LayoutPicker({ onClose }) {
 
   const [category, setCategory] = useState('All')
   const [confirming, setConfirming] = useState(null)
+  const [showInsertSpread, setShowInsertSpread] = useState(false)
   const isThemeCat = hasThemeContent && category === themeCatLabel
+  const isMonthSpreadCat = category === MONTH_SPREAD_CAT
+  // Manual month-spread insertion is only offered in ordinary trip journals — never
+  // photo-a-day (restricted to exactly two page kinds) or monthly-spreads (which already
+  // generates its 12 spreads at creation and doesn't additionally expose this command).
+  const isTripJournal = (notebook?.journalKind ?? 'trip') === 'trip'
 
-  const categories = ['All', ...(themeCatLabel ? [themeCatLabel] : []), ...LAYOUT_CATEGORIES]
+  const categories = ['All', ...(themeCatLabel ? [themeCatLabel] : []), ...LAYOUT_CATEGORIES, ...(isTripJournal ? [MONTH_SPREAD_CAT] : [])]
   const filtered = category === 'All' ? LAYOUTS : LAYOUTS.filter(l => l.category === category)
   const themeGroups = isThemeCat
     ? Object.entries([...theme.covers, ...theme.layouts].reduce((acc, item) => {
@@ -162,7 +171,20 @@ export default function LayoutPicker({ onClose }) {
 
         {/* Grid */}
         <div className="flex-1 overflow-y-auto px-5 pb-5 min-h-0">
-          {isThemeCat ? (
+          {isMonthSpreadCat ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
+              <span className="text-4xl">🗓️</span>
+              <p className="text-sm text-stone-600 max-w-xs">
+                Insert a coordinated two-page spread for a chosen month, seasonally styled and inserted after the current page.
+              </p>
+              <button
+                onClick={() => setShowInsertSpread(true)}
+                className="px-4 py-2 text-sm bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-medium"
+              >
+                Insert Month Spread…
+              </button>
+            </div>
+          ) : isThemeCat ? (
             <div className="space-y-6">
               {themeGroups.map(([group, items]) => (
                 <div key={group}>
@@ -233,6 +255,9 @@ export default function LayoutPicker({ onClose }) {
           </div>
         )}
       </div>
+      {showInsertSpread && (
+        <InsertMonthSpreadModal onClose={() => { setShowInsertSpread(false); onClose() }} />
+      )}
     </div>
   )
 }

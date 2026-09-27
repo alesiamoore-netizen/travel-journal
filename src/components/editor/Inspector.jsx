@@ -809,12 +809,21 @@ function PagePanel() {
 
       <div>
         <label className="block text-xs text-stone-400 mb-1.5">Date</label>
-        <input
-          type="date"
-          value={page.date ?? ''}
-          onChange={e => upd({ date: e.target.value })}
-          className="w-full border border-stone-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
-        />
+        {page.pageKind === 'daily-entry' ? (
+          <>
+            <div className="w-full border border-stone-200 rounded-md px-2 py-1.5 text-sm bg-stone-50 text-stone-600">
+              {page.date}
+            </div>
+            <p className="text-[10px] text-stone-400 mt-1">Daily entries are dated when created — delete and re-add to change the date.</p>
+          </>
+        ) : (
+          <input
+            type="date"
+            value={page.date ?? ''}
+            onChange={e => upd({ date: e.target.value })}
+            className="w-full border border-stone-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
+        )}
       </div>
     </div>
   )

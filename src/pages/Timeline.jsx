@@ -3,22 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useNotebookStore } from '../store/notebookStore'
 import { useAuth } from '../context/AuthContext'
 import { fsLoadPages } from '../firebase/firestoreHelpers'
-
-function monthKey(d) {
-  return d.slice(0, 7) // 'YYYY-MM'
-}
-function fmtMonth(ym) {
-  const [y, m] = ym.split('-')
-  return new Date(+y, +m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-}
-function daysInMonth(ym) {
-  const [y, m] = ym.split('-').map(Number)
-  return new Date(y, m, 0).getDate()
-}
-function startDow(ym) {
-  const [y, m] = ym.split('-').map(Number)
-  return new Date(y, m - 1, 1).getDay()
-}
+import { monthKey, fmtMonth, daysInMonth, startDow } from '../utils/calendarGrid'
 
 export default function Timeline() {
   const { notebooks } = useNotebookStore()

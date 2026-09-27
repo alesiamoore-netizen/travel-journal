@@ -4,6 +4,7 @@ import {
   fsLoadNotebooks, fsLoadPages, fsLoadElements, fsSavePage, fsUpdatePage, fsDeletePage,
   fsSaveElement, fsUpdateElement, fsDeleteElement, fsReplacePageElements,
   fsUpdatePageOrders, fsUpdateNotebook, fsLoadNotebookElements, fsBatchUpdateElements,
+  fsApplyMonthStyle, fsInsertMonthSpread, fsCreateDailyEntryIfAbsent,
 } from '../firebase/firestoreHelpers'
 import {
   pushElement, deleteElement as fsCollabDeleteEl,
@@ -13,116 +14,17 @@ import {
 } from '../firebase/collab'
 import { useCollabStore } from './collabStore'
 import { THEMES, resolveThemedElements, computeElementRestyle } from '../data/themes'
+import { defaultData, defaultGrid, buildElementDocs, buildMonthSpreadDocs } from '../utils/journalBuilders'
+import { monthTokensToOverrides, baseTokensFromTheme } from '../data/monthlyThemes'
 
-function defaultData(type) {
-  if (type === 'text') return {
-    content: { type: 'doc', content: [{ type: 'paragraph' }] },
-    fontFamily: 'Georgia',
-    fontSize: 15,
-    color: '#2c2c2c',
-    columns: 1,
-    textStyle: 'body',
-    backgroundColor: 'transparent',
-    rotation: 0,
-  }
-  if (type === 'image') return {
-    photoId: null,
-    storageUrl: null,
-    thumbnailUrl: null,
-    fit: 'cover',
-    caption: '',
-    captionStyle: 'below',
-    captionColor: '#888888',
-    captionFont: 'Georgia',
-    captionAlign: 'center',
-    borderStyle: 'none',
-    filter: 'none',
-    rotation: 0,
-    shadow: 'none',
-    clipShape: 'none',
-    overlayText: '',
-    overlayPosition: 'bottom-left',
-  }
-  if (type === 'sticker') return {
-    stickerId: 'compass',
-    color: '#c0813a',
-    opacity: 1,
-    rotation: 0,
-  }
-  if (type === 'map') return {
-    tileStyle: 'minimal',
-    showRoute: true,
-    showPins: true,
-    pinColor: '#c0813a',
-    routeColor: '#c0813a',
-    routeWeight: 2,
-    mode: 'route',
-    pinLat: null,
-    pinLng: null,
-    pinLabel: '',
-    pinZoom: 13,
-  }
-  if (type === 'keepsake') return {
-    label: 'Ticket stub',
-    hint: 'Tape or glue here',
-    style: 'dashed',
-    borderColor: 'accent',
-  }
-  if (type === 'weather') return {
-    location: '',
-    date: '',
-    units: 'metric',
-    weatherData: null,
-  }
-  if (type === 'divider') return {
-    style: 'line',
-    color: 'accent',
-    rotation: 0,
-  }
-  if (type === 'collage') return {
-    photos: [],
-    columns: 2,
-    gap: 4,
-    borderRadius: 4,
-  }
-  if (type === 'drawing') return {
-    strokes: [],
-    backgroundColor: 'transparent',
-    strokeColor: '#2c2c2c',
-    strokeWidth: 2,
-  }
-  if (type === 'voiceMemo') return {
-    storageUrl: null,
-    duration: 0,
-    label: '',
-  }
-  if (type === 'cover') return {
-    storageUrl: null,
-    thumbnailUrl: null,
-    photoId: null,
-    title: '',
-    subtitle: '',
-    overlayColor: '#00000055',
-    titleColor: '#ffffff',
-    subtitleColor: '#ffffffcc',
-    titleAlign: 'center',
-    titleFont: 'Georgia, serif',
-  }
-  return {}
-}
-
-function defaultGrid(type) {
-  if (type === 'text')     return { x: 1, y: 1,  w: 10, h: 5  }
-  if (type === 'map')      return { x: 0, y: 0,  w: 12, h: 10 }
-  if (type === 'divider')  return { x: 1, y: 7,  w: 10, h: 1  }
-  if (type === 'sticker')  return { x: 4, y: 4,  w: 4,  h: 4  }
-  if (type === 'keepsake') return { x: 1, y: 2,  w: 10, h: 8  }
-  if (type === 'weather')  return { x: 1, y: 1,  w: 10, h: 4  }
-  if (type === 'collage')  return { x: 0, y: 0,  w: 12, h: 10 }
-  if (type === 'drawing')  return { x: 1, y: 2,  w: 10, h: 8  }
-  if (type === 'cover')    return { x: 0, y: 0,  w: 12, h: 16 }
-  if (type === 'voiceMemo') return { x: 1, y: 6,  w: 10, h: 4  }
-  return                           { x: 2, y: 2,  w: 8,  h: 8  }
+// Real calendar validation (rejects rollovers like Feb 30, accepts Feb 29 only in real leap
+// years) — not string prefix-matching against a year.
+export function isValidCalendarDate(dateStr) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
+  if (!m) return false
+  const [, y, mo, d] = m.map(Number)
+  const dt = new Date(y, mo - 1, d)
+  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d
 }
 
 function snapshot(elements) {
@@ -497,35 +399,7 @@ export const useEditorStore = create((set, get) => ({
       set({ elements: [], selectedId: null })
       return
     }
-    const newElements = layoutDef.elements.map(el => {
-      let inferredData = {}
-      if (el.type === 'text' && !el.data?.textStyle) {
-        const { y, w, h } = el.grid
-        if (h <= 2 && w >= 8) {
-          inferredData = y === 0
-            ? { textStyle: 'dateline', fontSize: 11, color: '#c0813a' }
-            : { textStyle: 'caption', fontSize: 10, color: '#888888' }
-        } else if (h <= 3 && w >= 8 && y === 0) {
-          inferredData = { textStyle: 'heading', fontSize: 32, color: '#1a1a1a' }
-        }
-      }
-      return {
-        id: crypto.randomUUID(),
-        pageId: currentPageId,
-        notebookId: notebook.id,
-        type: el.type,
-        grid: { ...el.grid },
-        data: { ...defaultData(el.type), ...inferredData, ...(el.data ?? {}) },
-        // Carried through when the caller pre-resolved a themed layout (see applyThemedLayout) —
-        // absent for plain layouts, exactly as before.
-        ...(el.themeManaged ? {
-          sourceThemeId: el.sourceThemeId,
-          sourceTemplateId: el.sourceTemplateId,
-          themeManaged: true,
-          themeTokenProvenance: el.themeTokenProvenance,
-        } : {}),
-      }
-    })
+    const newElements = buildElementDocs(currentPageId, notebook.id, layoutDef)
     await fsReplacePageElements(uid, currentPageId, notebook.id, newElements)
     set({ elements: newElements, selectedId: null })
     const cid = collabId()
@@ -537,6 +411,274 @@ export const useEditorStore = create((set, get) => ({
   applyThemedLayout: async (layoutDef, theme, decorationLevel = 'standard') => {
     const resolved = resolveThemedElements(layoutDef.elements, theme, layoutDef.id, decorationLevel)
     return get().applyLayout({ elements: resolved })
+  },
+
+  // ── Monthly Spreads: styling (atomic) + manual insertion (bounded) ─────────────────────
+
+  // Changes a spread's seasonal style: computes the FULL two-page change set (both pages'
+  // themeOverrides + every affected element's restyle patch) before writing anything, then
+  // commits it all in one Firestore batch — page colors and element colors can never diverge
+  // from a partial failure. `monthTokensOrNull === null` resets to the notebook's own base
+  // theme (never a bare unresolved null) via baseTokensFromTheme, which always produces a
+  // complete 4-key token set since every theme has these fields.
+  setMonthStyle: async (spreadId, monthTokensOrNull) => {
+    const { uid, pages, notebook } = get()
+    if (!uid || !notebook) return { ok: false, error: 'Not signed in' }
+    // Same rigor as Editor.jsx's resolveSpreadPairing — exactly one 'left' and one 'right',
+    // not merely two pages sharing the id (which would also pass a bare length===2 check on a
+    // corrupt two-lefts/zero-rights spread).
+    const spreadPages = pages.filter(p => p.spreadId === spreadId)
+    const leftCount = spreadPages.filter(p => p.spreadSide === 'left').length
+    const rightCount = spreadPages.filter(p => p.spreadSide === 'right').length
+    if (!(spreadPages.length === 2 && leftCount === 1 && rightCount === 1)) {
+      return { ok: false, error: 'Spread integrity error' }
+    }
+
+    const tokens = monthTokensOrNull ?? baseTokensFromTheme(notebook.theme)
+    const overridePatch = monthTokensOrNull ? monthTokensToOverrides(tokens) : {}
+    const syntheticTheme = { id: 'month-style', tokens }
+
+    const elementUpdates = []
+    for (const page of spreadPages) {
+      const pageElements = await fsLoadElements(uid, page.id)
+      for (const el of pageElements.filter(e => e.themeManaged)) {
+        const result = computeElementRestyle(el, syntheticTheme)
+        if (result?.changed) {
+          elementUpdates.push({ id: el.id, patch: { data: result.data, themeTokenProvenance: result.themeTokenProvenance, sourceThemeId: result.sourceThemeId } })
+        }
+      }
+    }
+
+    try {
+      await fsApplyMonthStyle(uid, {
+        pageUpdates: spreadPages.map(p => ({ id: p.id, patch: { themeOverrides: overridePatch } })),
+        elementUpdates,
+      })
+    } catch (error) {
+      // A rejected batch leaves neither page nor element writes applied (atomic) — surface
+      // gracefully instead of an unhandled rejection with a stuck "busy" UI state.
+      return { ok: false, error: error?.message ?? 'Could not update the month style' }
+    }
+
+    set(s => ({
+      pages: s.pages.map(p => p.spreadId === spreadId ? { ...p, themeOverrides: overridePatch } : p),
+      elements: s.elements.map(e => {
+        const upd = elementUpdates.find(u => u.id === e.id)
+        return upd ? { ...e, ...upd.patch } : e
+      }),
+    }))
+    const cid = collabId()
+    if (cid) {
+      get().pages.filter(p => p.spreadId === spreadId).forEach(p => pushPage(cid, p).catch(console.warn))
+      elementUpdates.forEach(u => {
+        const el = get().elements.find(e => e.id === u.id)
+        if (el) pushElement(cid, el).catch(console.warn)
+      })
+    }
+    return { ok: true }
+  },
+
+  // Manual month-spread insertion — trip journals only (never photo-a-day or monthly-spreads,
+  // see decision 7). Uses the identical buildMonthSpreadDocs builder the dedicated preset uses.
+  // Checks the total operation count BEFORE building the write — a large existing journal
+  // falls back to appending the spread at the end (zero renumbering) instead of ever
+  // discovering Firestore's 500-op batch limit mid-write.
+  insertMonthSpread: async (monthIndex, year) => {
+    const { uid, pages, notebook, currentPageId } = get()
+    if (!uid || !notebook) return { ok: false, error: 'Not signed in' }
+    // Matches the UI gating in LayoutPicker.jsx/MobileEditorBar.jsx exactly: a pre-existing
+    // journal with no journalKind field at all is an ordinary trip journal, not a rejection —
+    // only an explicit 'photo-a-day'/'monthly-spreads' should be blocked here.
+    if ((notebook.journalKind ?? 'trip') !== 'trip') return { ok: false, error: 'Manual spread insertion is only available in trip journals' }
+
+    const { pages: spreadPages, elements: spreadElements } = buildMonthSpreadDocs(
+      notebook.id, monthIndex, year, { baseOrder: 0, pageSize: notebook.pageSize }
+    )
+
+    const afterIdx = pages.findIndex(p => p.id === currentPageId)
+    const insertIdx = afterIdx < 0 ? pages.length : afterIdx + 1
+    const pagesAfter = pages.slice(insertIdx)
+    const opCount = 2 + spreadElements.length + pagesAfter.length
+
+    let finalPages, orderUpdates, appendedAtEnd
+    if (opCount <= 400) {
+      const withSpread = [...pages.slice(0, insertIdx), spreadPages[0], spreadPages[1], ...pagesAfter]
+        .map((p, i) => ({ ...p, order: i }))
+      finalPages = withSpread
+      spreadPages[0].order = withSpread.find(p => p.id === spreadPages[0].id).order
+      spreadPages[1].order = withSpread.find(p => p.id === spreadPages[1].id).order
+      orderUpdates = withSpread
+        .filter(p => p.id !== spreadPages[0].id && p.id !== spreadPages[1].id)
+        .map(p => ({ id: p.id, order: p.order }))
+      appendedAtEnd = false
+    } else {
+      const maxOrder = Math.max(0, ...pages.map(p => p.order ?? 0))
+      spreadPages[0].order = maxOrder + 1
+      spreadPages[1].order = maxOrder + 2
+      finalPages = [...pages, spreadPages[0], spreadPages[1]]
+      orderUpdates = []
+      appendedAtEnd = true
+    }
+
+    try {
+      await fsInsertMonthSpread(uid, { pages: spreadPages, elements: spreadElements, orderUpdates })
+    } catch (error) {
+      // A rejected batch leaves no new pages/elements and no order changes applied (atomic).
+      return { ok: false, error: error?.message ?? 'Could not insert the spread' }
+    }
+    set({ pages: finalPages.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) })
+    const cid = collabId()
+    if (cid) {
+      spreadPages.forEach(p => pushPage(cid, p).catch(console.warn))
+      pushAllElements(cid, spreadElements).catch(console.warn)
+    }
+    return { ok: true, appendedAtEnd, spreadId: spreadPages[0].spreadId }
+  },
+
+  // ── Photo-a-Day: daily entries ──────────────────────────────────────────────────────────
+
+  // Race-safe: fsCreateDailyEntryIfAbsent's Firestore transaction is what actually prevents
+  // duplicates (see firestoreHelpers.js) — this action just builds the candidate page+elements
+  // and reflects whatever the transaction says actually won (its own choice, or another
+  // client's, if one raced it). Strict date validation, and One-Year mode's year restriction,
+  // are checked before any write.
+  addDailyEntry: async (dateStr, layoutDef) => {
+    const { uid, notebook } = get()
+    if (!uid || !notebook) return { ok: false, error: 'Not signed in' }
+    if (!isValidCalendarDate(dateStr)) return { ok: false, error: 'Invalid date' }
+    if (notebook.photoDayMode === 'year' && Number(dateStr.slice(0, 4)) !== notebook.journalYear) {
+      return { ok: false, error: `Date must be within ${notebook.journalYear}` }
+    }
+    const pageId = `page-daily-${notebook.id}-${dateStr}`
+    const order = Number(dateStr.replaceAll('-', ''))
+    const pageDoc = { id: pageId, notebookId: notebook.id, date: dateStr, pageKind: 'daily-entry', order, title: '', location: '', themeOverrides: {} }
+    const elementDocs = layoutDef ? buildElementDocs(pageId, notebook.id, layoutDef) : []
+
+    let created, page
+    try {
+      ;({ created, page } = await fsCreateDailyEntryIfAbsent(uid, dateStr, pageDoc, elementDocs))
+    } catch (error) {
+      // A rejected transaction leaves no page/element documents (Firestore transactions are
+      // all-or-nothing) — surface this as a graceful result instead of an unhandled rejection,
+      // which would otherwise leave the calling UI's "busy" state stuck with no explanation.
+      return { ok: false, error: error?.message ?? 'Could not create the entry' }
+    }
+
+    set(s => {
+      const exists = s.pages.some(p => p.id === page.id)
+      const nextPages = exists ? s.pages : [...s.pages, page].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      return { pages: nextPages }
+    })
+    await get().switchPage(page.id)
+
+    if (created) {
+      const cid = collabId()
+      if (cid) {
+        pushPage(cid, page).catch(console.warn)
+        pushAllElements(cid, elementDocs).catch(console.warn)
+      }
+    }
+    return { ok: true, created, page }
+  },
+
+  // Deletes a daily entry (and its elements), then returns to the journal's cover page — a
+  // fixed, always-present target, never a "nearest date" computation. Guarded to only ever
+  // act on pageKind:'daily-entry' pages, so it structurally cannot delete the cover. No order
+  // renumbering happens here (daily-entry order is date-derived, never renumbered — §6).
+  deleteDailyEntry: async (pageId) => {
+    const { uid, pages, currentPageId } = get()
+    if (!uid) return { ok: false }
+    const page = pages.find(p => p.id === pageId)
+    if (!page || page.pageKind !== 'daily-entry') return { ok: false, error: 'Not a daily entry' }
+    await fsDeletePage(uid, pageId)
+    const remaining = pages.filter(p => p.id !== pageId)
+    set({ pages: remaining })
+    if (currentPageId === pageId) {
+      const coverPage = remaining.find(p => p.pageKind !== 'daily-entry') ?? remaining[0]
+      if (coverPage) await get().switchPage(coverPage.id)
+    }
+    const cid = collabId()
+    if (cid) fsCollabDeletePage(cid, pageId).catch(console.warn)
+    return { ok: true }
+  },
+
+  // Content-preserving conversion between the 4 daily-entry layout variants — never the
+  // destructive applyLayout replace. Same-role elements carry over their FULL data + any
+  // provenance fields, only grid/role coming from the new layout def. photo<->photos is the
+  // one genuinely lossy direction (and any role with real content and no destination role in
+  // the new layout follows the same rule): returns {lossy:true, willDrop} instead of writing
+  // anything unless `force:true` is passed.
+  convertDailyLayout: async (pageId, newLayoutDef, { force = false } = {}) => {
+    const { uid, notebook, elements, currentPageId } = get()
+    if (!uid || !notebook) return { ok: false, error: 'Not signed in' }
+    const isCurrent = pageId === currentPageId
+    const oldElements = isCurrent ? elements : await fsLoadElements(uid, pageId)
+    const byRole = {}
+    for (const el of oldElements) if (el.role) byRole[el.role] = el
+
+    function extractPlainText(docNode) {
+      if (!docNode?.content) return ''
+      let out = ''
+      const walk = (node) => {
+        if (node.text) out += node.text
+        if (node.content) node.content.forEach(walk)
+      }
+      docNode.content.forEach(walk)
+      return out
+    }
+    const hasContent = (el) => {
+      if (!el) return false
+      if (el.type === 'text') return extractPlainText(el.data?.content).trim().length > 0
+      return true
+    }
+
+    const newRoles = new Set(newLayoutDef.elements.map(el => el.role).filter(Boolean))
+    const willDrop = []
+    for (const [role, el] of Object.entries(byRole)) {
+      if (role === 'photo' || role === 'photos') continue
+      if (!newRoles.has(role) && hasContent(el)) willDrop.push(role)
+    }
+
+    const oldPhotoCount = byRole.photo?.data?.photoId ? 1 : (byRole.photos?.data?.photos ?? []).length
+    const targetHasPhoto = newRoles.has('photo')
+    const targetHasPhotos = newRoles.has('photos')
+    let droppedPhotoCount = 0
+    if (oldPhotoCount > 0) {
+      if (targetHasPhoto && !targetHasPhotos) droppedPhotoCount = Math.max(0, oldPhotoCount - 1)
+      else if (!targetHasPhoto && !targetHasPhotos) droppedPhotoCount = oldPhotoCount
+    }
+    if (droppedPhotoCount > 0) willDrop.push(`${droppedPhotoCount} photo${droppedPhotoCount > 1 ? 's' : ''}`)
+
+    if (willDrop.length && !force) return { ok: false, lossy: true, willDrop }
+
+    const newElements = newLayoutDef.elements.map(newEl => {
+      const built = buildElementDocs(pageId, notebook.id, { elements: [newEl] })[0]
+      const old = newEl.role ? byRole[newEl.role] : null
+      if (old) {
+        return {
+          ...built,
+          data: { ...old.data },
+          ...(old.themeManaged ? {
+            themeManaged: true, sourceThemeId: old.sourceThemeId,
+            sourceTemplateId: old.sourceTemplateId, themeTokenProvenance: old.themeTokenProvenance,
+          } : {}),
+        }
+      }
+      if (newEl.role === 'photos' && byRole.photo?.data?.photoId) {
+        return { ...built, data: { ...built.data, photos: [{ photoId: byRole.photo.data.photoId, thumbnailUrl: byRole.photo.data.thumbnailUrl, storageUrl: byRole.photo.data.storageUrl }] } }
+      }
+      if (newEl.role === 'photo' && byRole.photos?.data?.photos?.[0]) {
+        const p = byRole.photos.data.photos[0]
+        return { ...built, data: { ...built.data, photoId: p.photoId, thumbnailUrl: p.thumbnailUrl, storageUrl: p.storageUrl } }
+      }
+      return built
+    })
+
+    await fsReplacePageElements(uid, pageId, notebook.id, newElements)
+    if (isCurrent) set({ elements: newElements })
+    const cid = collabId()
+    if (cid) pushAllElements(cid, newElements).catch(console.warn)
+    return { ok: true, lossy: false }
   },
 
   updatePage: async (pageId, patch) => {
@@ -572,7 +714,7 @@ export const useEditorStore = create((set, get) => ({
     const data = await fetchJournalFromFirestore(notebook.id)
     if (!data) return
     for (const rp of data.pages) {
-      await fsSavePage(uid, { ...rp, notebookId: notebook.id, themeOverrides: {} })
+      await fsSavePage(uid, { ...rp, notebookId: notebook.id, themeOverrides: rp.themeOverrides ?? {} })
     }
     const pageIds = data.pages.map(p => p.id)
     for (const pid of pageIds) {

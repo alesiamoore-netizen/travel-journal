@@ -10,8 +10,16 @@ const PAGE_SIZES = [
   { value: '11x8.5', label: '11 × 8.5" landscape',  desc: 'Landscape — panoramic views' },
 ]
 
+const JOURNAL_KINDS = [
+  { value: 'trip', label: 'Trip Journal', desc: 'Pages, photos, maps — the classic travel journal' },
+  { value: 'photo-a-day', label: 'Photo-a-Day', desc: 'One photo per calendar day, added as you go' },
+  { value: 'monthly-spreads', label: 'Monthly Spreads', desc: 'A coordinated two-page spread for each month of a year' },
+]
+
+const currentYear = new Date().getFullYear()
+
 export default function CreateNotebookModal({ onClose }) {
-  const { create } = useNotebookStore()
+  const { create, createPhotoADayJournal, createMonthlySpreadsJournal } = useNotebookStore()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -19,7 +27,12 @@ export default function CreateNotebookModal({ onClose }) {
   const [themeCategory, setThemeCategory] = useState('Occasion')
   const [themeId, setThemeId] = useState('classic')
   const [saving, setSaving] = useState(false)
+  const [createError, setCreateError] = useState('')
   const [previewThemeId, setPreviewThemeId] = useState(null)
+  const [journalKind, setJournalKind] = useState('trip')
+  const [photoDayMode, setPhotoDayMode] = useState('year') // 'year' recommended/default
+  const [journalYear, setJournalYear] = useState(currentYear)
+  const [spreadYear, setSpreadYear] = useState(currentYear)
 
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0]
   const filteredThemes = THEMES.filter(t => t.category === themeCategory)
@@ -28,7 +41,22 @@ export default function CreateNotebookModal({ onClose }) {
     e.preventDefault()
     if (!name.trim()) return
     setSaving(true)
-    const notebook = await create({ name: name.trim(), description, pageSize, theme })
+    setCreateError('')
+    let notebook
+    if (journalKind === 'photo-a-day') {
+      notebook = await createPhotoADayJournal({ name: name.trim(), description, pageSize, theme, photoDayMode, journalYear })
+    } else if (journalKind === 'monthly-spreads') {
+      notebook = await createMonthlySpreadsJournal({ name: name.trim(), description, pageSize, theme, spreadYear })
+    } else {
+      notebook = await create({ name: name.trim(), description, pageSize, theme })
+    }
+    if (!notebook) {
+      // The atomic create failed (or rejected) — nothing was written. Surface it instead of
+      // crashing on notebook.id or leaving the button stuck on "Creating…".
+      setSaving(false)
+      setCreateError('Could not create the journal. Please try again.')
+      return
+    }
     navigate(`/journal/${notebook.id}`)
   }
 
@@ -74,6 +102,84 @@ export default function CreateNotebookModal({ onClose }) {
               placeholder="Lisbon, Porto, Sintra road trip"
               className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
+          </div>
+
+          {/* Journal kind */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">Journal type</label>
+            <div className="space-y-2">
+              {JOURNAL_KINDS.map((jk) => (
+                <label key={jk.value} className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="journalKind"
+                    value={jk.value}
+                    checked={journalKind === jk.value}
+                    onChange={() => setJournalKind(jk.value)}
+                    className="mt-0.5 accent-amber-700"
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-stone-800 group-hover:text-stone-900">{jk.label}</div>
+                    <div className="text-xs text-stone-500">{jk.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {journalKind === 'photo-a-day' && (
+              <div className="mt-3 pl-6 space-y-3 border-l-2 border-amber-100">
+                <div className="space-y-2">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="radio" name="photoDayMode" value="year"
+                      checked={photoDayMode === 'year'}
+                      onChange={() => setPhotoDayMode('year')}
+                      className="mt-0.5 accent-amber-700"
+                    />
+                    <div>
+                      <div className="text-sm font-medium text-stone-800">One-Year <span className="text-amber-700 font-normal">(recommended)</span></div>
+                      <div className="text-xs text-stone-500">Entries limited to one calendar year — clean progress tracking</div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="radio" name="photoDayMode" value="ongoing"
+                      checked={photoDayMode === 'ongoing'}
+                      onChange={() => setPhotoDayMode('ongoing')}
+                      className="mt-0.5 accent-amber-700"
+                    />
+                    <div>
+                      <div className="text-sm font-medium text-stone-800">Ongoing</div>
+                      <div className="text-xs text-stone-500">Entries can span multiple years, grouped by year and month</div>
+                    </div>
+                  </label>
+                </div>
+                {photoDayMode === 'year' && (
+                  <div>
+                    <label className="block text-xs font-medium text-stone-600 mb-1">Year</label>
+                    <input
+                      type="number"
+                      value={journalYear}
+                      onChange={(e) => setJournalYear(Number(e.target.value) || currentYear)}
+                      className="w-28 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {journalKind === 'monthly-spreads' && (
+              <div className="mt-3 pl-6 border-l-2 border-amber-100">
+                <label className="block text-xs font-medium text-stone-600 mb-1">Year</label>
+                <input
+                  type="number"
+                  value={spreadYear}
+                  onChange={(e) => setSpreadYear(Number(e.target.value) || currentYear)}
+                  className="w-28 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-xs text-stone-400 mt-1.5">Creates all 12 month-spreads (24 pages) immediately, each with its own seasonal styling.</p>
+              </div>
+            )}
           </div>
 
           {/* Page size */}
@@ -163,6 +269,8 @@ export default function CreateNotebookModal({ onClose }) {
               onSelect={(t) => setThemeId(t.id)}
             />
           )}
+
+          {createError && <p className="text-sm text-red-600">{createError}</p>}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">

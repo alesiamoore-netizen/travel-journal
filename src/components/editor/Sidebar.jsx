@@ -5,6 +5,9 @@ import { fsLoadPhotos, fsLoadElements } from '../../firebase/firestoreHelpers'
 import { subscribePresence } from '../../firebase/collab'
 import LayoutPicker from './LayoutPicker'
 import ThemeDetailModal from './ThemeDetailModal'
+import DailyLayoutPicker from './DailyLayoutPicker'
+import MonthStyleModal from './MonthStyleModal'
+import PhotoADayProgress from './PhotoADayProgress'
 
 function PhotoLibrary({ notebookId, onUse }) {
   const { user } = useAuth()
@@ -79,10 +82,14 @@ function PageThumb({ elements, accent }) {
 }
 
 export default function Sidebar() {
-  const { pages, currentPageId, notebook, switchPage, addPage, insertPageAfter, deletePage, movePage, reorderPages, duplicatePage, addElement, elements, selectedId, updateElement, uid } = useEditorStore()
+  const { pages, currentPageId, notebook, switchPage, addPage, insertPageAfter, deletePage, deleteDailyEntry, movePage, reorderPages, duplicatePage, addElement, elements, selectedId, updateElement, uid } = useEditorStore()
   const { user } = useAuth()
   const [showLayouts, setShowLayouts] = useState(false)
   const [showTheme, setShowTheme] = useState(false)
+  const [showDailyCreate, setShowDailyCreate] = useState(false)
+  const [showDailyStyle, setShowDailyStyle] = useState(false)
+  const [showMonthStyle, setShowMonthStyle] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
   const [pageElements, setPageElements] = useState({})
   const [sideTab, setSideTab] = useState('pages') // 'pages' | 'photos'
   const [searchOpen, setSearchOpen] = useState(false)
@@ -91,6 +98,10 @@ export default function Sidebar() {
   const [dragOverId, setDragOverId] = useState(null)
   const [presence, setPresence] = useState({}) // uid -> { displayName, photoURL, currentPageId }
   const accent = notebook?.theme?.accentColor ?? '#c0813a'
+  const isPhotoADay = notebook?.journalKind === 'photo-a-day'
+  const currentPage = pages.find(p => p.id === currentPageId)
+  const isDailyEntryPage = currentPage?.pageKind === 'daily-entry'
+  const isSpreadPage = currentPage?.pageKind === 'spread'
 
   // Subscribe to presence when notebook is loaded
   useEffect(() => {
@@ -146,21 +157,38 @@ export default function Sidebar() {
     <aside className="w-48 bg-white border-r border-stone-200 flex flex-col flex-shrink-0 overflow-hidden">
       {showLayouts && <LayoutPicker onClose={() => setShowLayouts(false)} />}
       {showTheme && <ThemeDetailModal onClose={() => setShowTheme(false)} />}
+      {showDailyCreate && <DailyLayoutPicker mode="create" onClose={() => setShowDailyCreate(false)} />}
+      {showDailyStyle && <DailyLayoutPicker mode="convert" pageId={currentPageId} onClose={() => setShowDailyStyle(false)} />}
+      {showMonthStyle && currentPage?.spreadId && (
+        <MonthStyleModal spreadId={currentPage.spreadId} onClose={() => setShowMonthStyle(false)} />
+      )}
+      {showProgress && <PhotoADayProgress onClose={() => setShowProgress(false)} />}
 
-      {/* Layouts / Theme buttons */}
+      {/* Layouts / Theme buttons — Photo-a-Day journals get "+ Today's Entry" (and "Daily
+          Style" when viewing a daily entry) instead of the generic Layouts picker, per the
+          decision to restrict Photo-a-Day journals to exactly two page kinds. */}
       <div className="p-2 border-b border-stone-100 flex-shrink-0 flex gap-1.5">
-        <button
-          onClick={() => setShowLayouts(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors text-xs font-semibold tracking-wide"
-        >
-          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="currentColor">
-            <rect x="1" y="1" width="6" height="6" rx="1"/>
-            <rect x="9" y="1" width="6" height="6" rx="1"/>
-            <rect x="1" y="9" width="6" height="6" rx="1"/>
-            <rect x="9" y="9" width="6" height="6" rx="1"/>
-          </svg>
-          Layouts
-        </button>
+        {isPhotoADay ? (
+          <button
+            onClick={() => setShowDailyCreate(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors text-xs font-semibold tracking-wide"
+          >
+            + Today's Entry
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowLayouts(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors text-xs font-semibold tracking-wide"
+          >
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="currentColor">
+              <rect x="1" y="1" width="6" height="6" rx="1"/>
+              <rect x="9" y="1" width="6" height="6" rx="1"/>
+              <rect x="1" y="9" width="6" height="6" rx="1"/>
+              <rect x="9" y="9" width="6" height="6" rx="1"/>
+            </svg>
+            Layouts
+          </button>
+        )}
         <button
           onClick={() => setShowTheme(true)}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors text-xs font-semibold tracking-wide"
@@ -168,6 +196,34 @@ export default function Sidebar() {
           🎨 Theme
         </button>
       </div>
+      {isPhotoADay && (
+        <div className="px-2 pb-2 flex-shrink-0 flex gap-1.5">
+          <button
+            onClick={() => setShowProgress(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors text-xs font-semibold tracking-wide"
+          >
+            📊 Progress
+          </button>
+          {isDailyEntryPage && (
+            <button
+              onClick={() => setShowDailyStyle(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 text-amber-800 hover:bg-amber-50 transition-colors text-xs font-semibold tracking-wide"
+            >
+              Daily Style
+            </button>
+          )}
+        </div>
+      )}
+      {isSpreadPage && (
+        <div className="px-2 pb-2 flex-shrink-0">
+          <button
+            onClick={() => setShowMonthStyle(true)}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 text-amber-800 hover:bg-amber-50 transition-colors text-xs font-semibold tracking-wide"
+          >
+            Month Style
+          </button>
+        </div>
+      )}
 
       {/* Pages / Photos tab toggle */}
       <div className="flex border-b border-stone-100 flex-shrink-0">
@@ -192,13 +248,15 @@ export default function Sidebar() {
             >
               🔍
             </button>
-            <button
-              onClick={() => insertPageAfter(currentPageId)}
-              className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 text-lg leading-none flex-shrink-0"
-              title="Insert page after current"
-            >
-              +
-            </button>
+            {!isPhotoADay && (
+              <button
+                onClick={() => insertPageAfter(currentPageId)}
+                className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 text-lg leading-none flex-shrink-0"
+                title="Insert page after current"
+              >
+                +
+              </button>
+            )}
           </>
         )}
       </div>
@@ -242,12 +300,12 @@ export default function Sidebar() {
           return (
             <div
               key={page.id}
-              draggable
-              onDragStart={() => setDragId(page.id)}
+              draggable={!isPhotoADay}
+              onDragStart={() => !isPhotoADay && setDragId(page.id)}
               onDragEnd={() => { setDragId(null); setDragOverId(null) }}
-              onDragOver={e => { e.preventDefault(); setDragOverId(page.id) }}
+              onDragOver={e => { if (isPhotoADay) return; e.preventDefault(); setDragOverId(page.id) }}
               onDrop={() => {
-                if (!dragId || dragId === page.id) return
+                if (isPhotoADay || !dragId || dragId === page.id) return
                 const src = pages.findIndex(p => p.id === dragId)
                 const dst = pages.findIndex(p => p.id === page.id)
                 const reordered = [...pages]
@@ -301,27 +359,44 @@ export default function Sidebar() {
                 )}
               </div>
               <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-px flex-shrink-0 transition-opacity">
-                <button
-                  className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-stone-600 text-[10px] leading-none"
-                  onClick={e => { e.stopPropagation(); movePage(page.id, -1) }}
-                  title="Move up"
-                >▲</button>
-                <button
-                  className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-stone-600 text-[10px] leading-none"
-                  onClick={e => { e.stopPropagation(); movePage(page.id, 1) }}
-                  title="Move down"
-                >▼</button>
-                <button
-                  className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-amber-600 text-[10px] leading-none"
-                  onClick={e => { e.stopPropagation(); insertPageAfter(page.id) }}
-                  title="Insert page after"
-                >+</button>
-                <button
-                  className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-amber-600 text-[10px] leading-none"
-                  onClick={e => { e.stopPropagation(); duplicatePage(page.id) }}
-                  title="Duplicate page"
-                >⎘</button>
-                {pages.length > 1 && (
+                {!isPhotoADay && (
+                  <>
+                    <button
+                      className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-stone-600 text-[10px] leading-none"
+                      onClick={e => { e.stopPropagation(); movePage(page.id, -1) }}
+                      title="Move up"
+                    >▲</button>
+                    <button
+                      className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-stone-600 text-[10px] leading-none"
+                      onClick={e => { e.stopPropagation(); movePage(page.id, 1) }}
+                      title="Move down"
+                    >▼</button>
+                    <button
+                      className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-amber-600 text-[10px] leading-none"
+                      onClick={e => { e.stopPropagation(); insertPageAfter(page.id) }}
+                      title="Insert page after"
+                    >+</button>
+                    <button
+                      className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-amber-600 text-[10px] leading-none"
+                      onClick={e => { e.stopPropagation(); duplicatePage(page.id) }}
+                      title="Duplicate page"
+                    >⎘</button>
+                  </>
+                )}
+                {isPhotoADay ? (
+                  page.pageKind === 'daily-entry' && (
+                    <button
+                      className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-red-500 text-base leading-none"
+                      onClick={e => {
+                        e.stopPropagation()
+                        if (window.confirm("Permanently delete this day's entry? This can't be undone.")) {
+                          deleteDailyEntry(page.id)
+                        }
+                      }}
+                      title="Delete entry"
+                    >×</button>
+                  )
+                ) : pages.length > 1 && (
                   <button
                     className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-red-500 text-base leading-none"
                     onClick={e => { e.stopPropagation(); deletePage(page.id) }}

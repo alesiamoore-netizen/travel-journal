@@ -19,6 +19,41 @@ import StatsModal from '../components/editor/StatsModal'
 import AiDraftModal from '../components/editor/AiDraftModal'
 import PageHeader, { PageFooter } from '../components/editor/PageHeader'
 
+// Pure — shared by the adjacent-elements loading effect and the render body, so both agree
+// on exactly the same pairing. Any page with a `spreadId` is paired by that id, validated for
+// exactly one 'left' + one 'right' sibling — never index-adjacency, and never a null/ambiguous
+// partner passed through as if valid. A valid spread pair auto-enables the two-page view.
+export function resolveSpreadPairing(pages, currentPageId, spreadView, isMobile) {
+  const currentPage = pages.find(p => p.id === currentPageId)
+  const currentPageIdx = pages.findIndex(p => p.id === currentPageId)
+
+  const siblings = currentPage?.spreadId ? pages.filter(p => p.spreadId === currentPage.spreadId) : []
+  const lefts = siblings.filter(p => p.spreadSide === 'left')
+  const rights = siblings.filter(p => p.spreadSide === 'right')
+  const isSpreadPage = !!currentPage?.spreadId
+  const integrityIssue = isSpreadPage && !(siblings.length === 2 && lefts.length === 1 && rights.length === 1)
+  const spreadPartner = isSpreadPage && !integrityIssue
+    ? (currentPage.spreadSide === 'left' ? rights[0] : lefts[0])
+    : null
+
+  const adjIdx = currentPageIdx > 0 ? currentPageIdx - 1 : (pages.length > 1 ? 1 : -1)
+  const indexAdjPage = adjIdx >= 0 ? pages[adjIdx] : null
+
+  const validSpread = isSpreadPage && !integrityIssue
+  // Rendering trusts the spreadView toggle as the single source of truth for ORDINARY pages
+  // (a separate effect initializes it to true when landing on a valid spread page, but the
+  // user's own manual toggle-off while on that page must stick, not be overridden here) —
+  // but a genuine integrity issue must ALWAYS force the single-page fallback, even if
+  // `spreadView` was left on from browsing a previous, unrelated page. Without this override,
+  // a corrupt spread could render as a two-page layout paired with an arbitrary
+  // index-adjacent page instead of the safe single-page fallback the integrity banner promises.
+  const showSpread = !isMobile && spreadView && !integrityIssue
+  const adjPage = validSpread ? spreadPartner : indexAdjPage
+  const currentIsLeft = validSpread && currentPage.spreadSide === 'left'
+
+  return { currentPage, currentPageIdx, adjIdx, isSpreadPage, integrityIssue, showSpread, adjPage, currentIsLeft }
+}
+
 export default function Editor() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -58,14 +93,26 @@ export default function Editor() {
     return () => reset()
   }, [id, user])
 
-  // Load adjacent page for spread view
+  // Landing on a valid spread page auto-enables the spread-view toggle (so the two-page
+  // pairing shows by default) — but this only *initializes* it per page-visit; the user can
+  // still manually turn it back off via the existing toggle without it snapping back on
+  // while they stay on the same page.
   useEffect(() => {
-    if (!spreadView || !ready) { setAdjacentElements([]); return }
-    const idx = pages.findIndex(p => p.id === currentPageId)
-    const adjIdx = idx > 0 ? idx - 1 : (pages.length > 1 ? 1 : -1)
-    if (adjIdx < 0 || adjIdx >= pages.length || adjIdx === idx) { setAdjacentElements([]); return }
-    if (user) fsLoadElements(user.uid, pages[adjIdx].id).then(setAdjacentElements)
-  }, [spreadView, currentPageId, pages, ready])
+    if (!ready) return
+    const { isSpreadPage, integrityIssue } = resolveSpreadPairing(pages, currentPageId, spreadView, isMobile)
+    if (isSpreadPage && !integrityIssue) setSpreadView(true)
+  }, [currentPageId, ready])
+
+  // Load the "other" page's elements for spread view — either the side-validated spreadId
+  // partner (Monthly Spreads / any manually inserted spread) or, for ordinary trip-journal
+  // pages, the untouched index-adjacent page. A spread with an integrity issue (missing/
+  // duplicate/same-side partner) never attempts to load a partner at all.
+  useEffect(() => {
+    if (!ready) { setAdjacentElements([]); return }
+    const { adjPage, showSpread } = resolveSpreadPairing(pages, currentPageId, spreadView, isMobile)
+    if (!showSpread || !adjPage) { setAdjacentElements([]); return }
+    if (user) fsLoadElements(user.uid, adjPage.id).then(setAdjacentElements)
+  }, [spreadView, currentPageId, pages, ready, isMobile])
 
   // Page flip animation — suppressed during PDF export
   useEffect(() => {
@@ -94,8 +141,17 @@ export default function Editor() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [undo, redo, selectedId, deleteElement])
 
+  const LARGE_EXPORT_THRESHOLD = 100
+
   const runExport = async (printReady = false) => {
     if (!notebook || !canvasRef.current) return
+    // Threshold checks the journal's actual page count at export time — correct for both
+    // Photo-a-Day modes (bounded ~365 for One-Year, potentially much larger for Ongoing)
+    // under the same logic, not a hardcoded assumption about any one journal kind.
+    if (pages.length > LARGE_EXPORT_THRESHOLD) {
+      const ok = window.confirm(`This will export ${pages.length} pages and may take several minutes. Continue?`)
+      if (!ok) return
+    }
     const hadPrintOverlay = printOverlay
     if (hadPrintOverlay) togglePrintOverlay()
     setExportState({ current: 0, total: pages.length })
@@ -173,13 +229,20 @@ export default function Editor() {
 
   const metrics = getCanvasMetrics(notebook.pageSize, canvasWidth)
   const spreadCanvasWidth = Math.floor(canvasWidth * 0.72)
-  const currentPage = pages.find(p => p.id === currentPageId)
-  const currentPageIdx = pages.findIndex(p => p.id === currentPageId)
-
   const spreadMetrics = getCanvasMetrics(notebook.pageSize, spreadCanvasWidth)
 
-  const adjIdx = currentPageIdx > 0 ? currentPageIdx - 1 : (pages.length > 1 ? 1 : -1)
-  const adjPage = adjIdx >= 0 ? pages[adjIdx] : null
+  const {
+    currentPage, currentPageIdx, adjIdx, isSpreadPage, integrityIssue: spreadIntegrityIssue, showSpread, adjPage, currentIsLeft,
+  } = resolveSpreadPairing(pages, currentPageId, spreadView, isMobile)
+
+  // For a valid spread, honor its actual left/right sides (spreadSide) instead of the
+  // ordinary "current is always right" convention — a page tagged 'left' renders on the left.
+  const leftPage = currentIsLeft ? currentPage : adjPage
+  const rightPage = currentIsLeft ? adjPage : currentPage
+  const leftPageNumber = (currentIsLeft ? currentPageIdx : adjIdx) + 1
+  const rightPageNumber = (currentIsLeft ? adjIdx : currentPageIdx) + 1
+  const leftIsCurrent = currentIsLeft
+  const rightIsCurrent = !currentIsLeft
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -203,6 +266,12 @@ export default function Editor() {
           <span>You're offline — changes are saved locally and will sync when you reconnect.</span>
         </div>
       )}
+      {spreadIntegrityIssue && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-xs text-red-700 flex items-center gap-2 flex-shrink-0">
+          <span>⚠️</span>
+          <span>This spread's pages don't match up correctly (missing or duplicate partner) — showing this page on its own. The rest of the journal is unaffected.</span>
+        </div>
+      )}
       <div className="flex flex-1 overflow-hidden">
         {!isMobile && <Sidebar />}
         <main
@@ -217,15 +286,26 @@ export default function Editor() {
             transform: pageVisible ? 'translateY(0) scale(1)' : 'translateY(5px) scale(0.995)',
             transition: pageVisible ? 'transform 0.15s ease' : 'none',
           }}>
-          {!isMobile && spreadView ? (
+          {showSpread ? (
             <div className="flex items-start gap-0" style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.22))' }}>
-              {/* Left page (adjacent, read-only) */}
+              {/* Left page */}
               <div className="flex flex-col flex-shrink-0">
-                <PageHeader notebook={notebook} page={adjPage} pageNumber={adjIdx + 1} canvasWidth={spreadMetrics.displayWidth} />
-                {adjacentElements !== undefined && pages.length > 1 ? (
+                <PageHeader notebook={notebook} page={leftPage} pageNumber={leftPageNumber} canvasWidth={spreadMetrics.displayWidth} />
+                {leftIsCurrent ? (
+                  <Canvas
+                    ref={canvasRef}
+                    page={leftPage}
+                    canvasWidth={spreadMetrics.displayWidth}
+                    displayHeight={spreadMetrics.displayHeight}
+                    rowHeight={spreadMetrics.rowHeight}
+                    bleedPx={spreadMetrics.bleedPx}
+                    marginPx={spreadMetrics.marginPx}
+                  />
+                ) : adjacentElements !== undefined && pages.length > 1 ? (
                   <Canvas
                     elements={adjacentElements}
                     readOnly
+                    page={leftPage}
                     canvasWidth={spreadMetrics.displayWidth}
                     displayHeight={spreadMetrics.displayHeight}
                     rowHeight={spreadMetrics.rowHeight}
@@ -237,26 +317,48 @@ export default function Editor() {
                     style={{
                       width: spreadMetrics.displayWidth,
                       height: spreadMetrics.displayHeight,
-                      backgroundColor: notebook.theme?.backgroundColor ?? '#f5f0e8',
+                      backgroundColor: leftPage?.themeOverrides?.backgroundColor ?? notebook.theme?.backgroundColor ?? '#f5f0e8',
                     }}
                   />
                 )}
-                <PageFooter notebook={notebook} pageNumber={adjIdx + 1} canvasWidth={spreadMetrics.displayWidth} />
+                <PageFooter notebook={notebook} page={leftPage} pageNumber={leftPageNumber} canvasWidth={spreadMetrics.displayWidth} />
               </div>
               {/* Gutter / spine */}
               <div className="w-3 self-stretch flex-shrink-0" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.12), rgba(0,0,0,0.04), rgba(0,0,0,0.14))' }} />
-              {/* Right page (current, editable) */}
+              {/* Right page */}
               <div className="flex flex-col flex-shrink-0">
-                <PageHeader notebook={notebook} page={currentPage} pageNumber={currentPageIdx + 1} canvasWidth={spreadMetrics.displayWidth} />
-                <Canvas
-                  ref={canvasRef}
-                  canvasWidth={spreadMetrics.displayWidth}
-                  displayHeight={spreadMetrics.displayHeight}
-                  rowHeight={spreadMetrics.rowHeight}
-                  bleedPx={spreadMetrics.bleedPx}
-                  marginPx={spreadMetrics.marginPx}
-                />
-                <PageFooter notebook={notebook} pageNumber={currentPageIdx + 1} canvasWidth={spreadMetrics.displayWidth} />
+                <PageHeader notebook={notebook} page={rightPage} pageNumber={rightPageNumber} canvasWidth={spreadMetrics.displayWidth} />
+                {rightIsCurrent ? (
+                  <Canvas
+                    ref={canvasRef}
+                    page={rightPage}
+                    canvasWidth={spreadMetrics.displayWidth}
+                    displayHeight={spreadMetrics.displayHeight}
+                    rowHeight={spreadMetrics.rowHeight}
+                    bleedPx={spreadMetrics.bleedPx}
+                    marginPx={spreadMetrics.marginPx}
+                  />
+                ) : adjacentElements !== undefined && pages.length > 1 ? (
+                  <Canvas
+                    elements={adjacentElements}
+                    readOnly
+                    page={rightPage}
+                    canvasWidth={spreadMetrics.displayWidth}
+                    displayHeight={spreadMetrics.displayHeight}
+                    rowHeight={spreadMetrics.rowHeight}
+                    bleedPx={spreadMetrics.bleedPx}
+                    marginPx={spreadMetrics.marginPx}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: spreadMetrics.displayWidth,
+                      height: spreadMetrics.displayHeight,
+                      backgroundColor: rightPage?.themeOverrides?.backgroundColor ?? notebook.theme?.backgroundColor ?? '#f5f0e8',
+                    }}
+                  />
+                )}
+                <PageFooter notebook={notebook} page={rightPage} pageNumber={rightPageNumber} canvasWidth={spreadMetrics.displayWidth} />
               </div>
             </div>
           ) : (
@@ -264,13 +366,14 @@ export default function Editor() {
               <PageHeader notebook={notebook} page={currentPage} pageNumber={currentPageIdx + 1} canvasWidth={metrics.displayWidth} />
               <Canvas
                 ref={canvasRef}
+                page={currentPage}
                 canvasWidth={metrics.displayWidth}
                 displayHeight={metrics.displayHeight}
                 rowHeight={metrics.rowHeight}
                 bleedPx={metrics.bleedPx}
                 marginPx={metrics.marginPx}
               />
-              <PageFooter notebook={notebook} pageNumber={currentPageIdx + 1} canvasWidth={metrics.displayWidth} />
+              <PageFooter notebook={notebook} page={currentPage} pageNumber={currentPageIdx + 1} canvasWidth={metrics.displayWidth} />
             </div>
           )}
           </div>

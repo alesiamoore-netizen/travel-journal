@@ -899,3 +899,141 @@ export const LAYOUTS = [
     ],
   },
 ]
+
+// ─── Daily (Photo-a-Day) ────────────────────────────────────────────────────
+// Not part of LAYOUT_CATEGORIES / the generic Layouts picker — reached only through the
+// dedicated "Daily Style" control on a `pageKind: 'daily-entry'` page. Every element carries
+// an explicit `role` so `convertDailyLayout` can map content across variants without loss.
+// Literal default colors (no $token refs) — Photo-a-Day styling is intentionally plain,
+// per the "lightweight" decision for this feature; only Monthly Spreads uses tokens.
+// Every layout includes a `caption` role so caption content always has a destination on
+// every daily-to-daily conversion, with no exceptions.
+export const DAILY_LAYOUTS = [
+  {
+    id: 'daily-photo-story', name: "Today's Photo", icon: '📸',
+    elements: [
+      { type: 'image', role: 'photo', grid: { x: 0, y: 0, w: 12, h: 10 } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 10, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 11, color: '#888888' } },
+      { type: 'text', role: 'heading', grid: { x: 1, y: 11, w: 10, h: 2 }, data: { textStyle: 'heading', content: doc('Today'), fontFamily: 'Georgia', fontSize: 26, color: '#1a1a1a' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 13, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Notes from today…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-photo-story-wide', name: "Today's Photo", icon: '📸',
+    elements: [
+      { type: 'image', role: 'photo', grid: { x: 0, y: 0, w: 12, h: 6 } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 6, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 10, color: '#888888' } },
+      { type: 'text', role: 'heading', grid: { x: 1, y: 7, w: 10, h: 1 }, data: { textStyle: 'heading', content: doc('Today'), fontFamily: 'Georgia', fontSize: 20, color: '#1a1a1a' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 8, w: 10, h: 2 }, data: { textStyle: 'body', content: doc('Notes from today…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-collage-4', name: 'Today in Photos', icon: '🖼️',
+    elements: [
+      { type: 'collage', role: 'photos', grid: { x: 0, y: 0, w: 12, h: 10 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 10, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 11, color: '#888888' } },
+      { type: 'text', role: 'heading', grid: { x: 1, y: 11, w: 10, h: 2 }, data: { textStyle: 'heading', content: doc('Today'), fontFamily: 'Georgia', fontSize: 26, color: '#1a1a1a' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 13, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Notes from today…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-collage-4-wide', name: 'Today in Photos', icon: '🖼️',
+    elements: [
+      { type: 'collage', role: 'photos', grid: { x: 0, y: 0, w: 12, h: 6 }, data: { columns: 2, gap: 5, borderRadius: 4 } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 6, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 10, color: '#888888' } },
+      { type: 'text', role: 'heading', grid: { x: 1, y: 7, w: 10, h: 1 }, data: { textStyle: 'heading', content: doc('Today'), fontFamily: 'Georgia', fontSize: 20, color: '#1a1a1a' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 8, w: 10, h: 2 }, data: { textStyle: 'body', content: doc('Notes from today…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-text-focus', name: "Today's Journal", icon: '✍️',
+    elements: [
+      { type: 'text', role: 'heading', grid: { x: 1, y: 1, w: 10, h: 2 }, data: { textStyle: 'heading', content: doc('Today'), fontFamily: 'Georgia', fontSize: 30, color: '#1a1a1a' } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 3, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 11, color: '#888888' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 4, w: 10, h: 12 }, data: { textStyle: 'body', content: doc('Just write…'), fontFamily: 'Georgia', fontSize: 15, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-text-focus-wide', name: "Today's Journal", icon: '✍️',
+    elements: [
+      { type: 'text', role: 'heading', grid: { x: 1, y: 0, w: 10, h: 1 }, data: { textStyle: 'heading', content: doc('Today'), fontFamily: 'Georgia', fontSize: 22, color: '#1a1a1a' } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 1, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 10, color: '#888888' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 2, w: 10, h: 8 }, data: { textStyle: 'body', content: doc('Just write…'), fontFamily: 'Georgia', fontSize: 13, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-mood-weather', name: 'Mood & Weather', icon: '🌤️',
+    elements: [
+      { type: 'weather', role: 'weather', grid: { x: 0, y: 0, w: 6, h: 4 } },
+      { type: 'text', role: 'moodNote', grid: { x: 6, y: 0, w: 6, h: 4 }, data: { textStyle: 'body', content: doc('Feeling…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+      { type: 'image', role: 'photo', grid: { x: 0, y: 4, w: 12, h: 8 } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 12, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 11, color: '#888888' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 13, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Notes from today…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'daily-mood-weather-wide', name: 'Mood & Weather', icon: '🌤️',
+    elements: [
+      { type: 'weather', role: 'weather', grid: { x: 0, y: 0, w: 6, h: 2 } },
+      { type: 'text', role: 'moodNote', grid: { x: 6, y: 0, w: 6, h: 2 }, data: { textStyle: 'body', content: doc('Feeling…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
+      { type: 'image', role: 'photo', grid: { x: 0, y: 2, w: 12, h: 5 } },
+      { type: 'text', role: 'caption', grid: { x: 1, y: 7, w: 10, h: 1 }, data: { textStyle: 'caption', content: doc(''), fontFamily: 'Georgia', fontSize: 10, color: '#888888' } },
+      { type: 'text', role: 'body', grid: { x: 1, y: 8, w: 10, h: 2 }, data: { textStyle: 'body', content: doc('Notes from today…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
+    ],
+  },
+]
+
+// ─── Monthly (Monthly Two-Page Spreads) ────────────────────────────────────
+// Not part of LAYOUT_CATEGORIES / the generic Layouts picker — reached only through the
+// dedicated Monthly Spreads preset and the "insert month spread" prompt in trip journals.
+// `$token` refs (resolved via resolveThemedElements against a synthetic per-month token
+// set, exactly like Backpacking's mechanism) drive the few decorative fields that should
+// track the month's seasonal palette — headings and dividers. Photo/body content stays literal.
+export const MONTHLY_LAYOUTS = [
+  {
+    id: 'month-spread-left', name: 'Month Overview', icon: '🗓️', group: 'Monthly',
+    elements: [
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Month'), fontFamily: 'Georgia', fontSize: 30, color: '$accent' } },
+      { type: 'image', grid: { x: 0, y: 2, w: 12, h: 8 } },
+      { type: 'text', grid: { x: 1, y: 10, w: 10, h: 6 }, data: { textStyle: 'body', content: doc('Highlights this month…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'month-spread-left-wide', name: 'Month Overview', icon: '🗓️', group: 'Monthly',
+    elements: [
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'heading', content: doc('Month'), fontFamily: 'Georgia', fontSize: 22, color: '$accent' } },
+      { type: 'image', grid: { x: 0, y: 1, w: 12, h: 6 } },
+      { type: 'text', grid: { x: 1, y: 7, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Highlights this month…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'month-spread-right', name: 'Notes & Memories', icon: '🗓️', group: 'Monthly',
+    elements: [
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Notes & Memories'), fontFamily: 'Georgia', fontSize: 26, color: '#1a1a1a' } },
+      { type: 'divider', grid: { x: 1, y: 2, w: 10, h: 1 }, data: { style: 'line', color: '$accentSecondary' } },
+      { type: 'collage', grid: { x: 0, y: 3, w: 12, h: 7 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
+      { type: 'text', grid: { x: 1, y: 10, w: 10, h: 6 }, data: { textStyle: 'body', content: doc('Favorite memory, place, reflection…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+    ],
+  },
+  {
+    id: 'month-spread-right-wide', name: 'Notes & Memories', icon: '🗓️', group: 'Monthly',
+    elements: [
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'heading', content: doc('Notes & Memories'), fontFamily: 'Georgia', fontSize: 18, color: '#1a1a1a' } },
+      { type: 'divider', grid: { x: 1, y: 1, w: 10, h: 1 }, data: { style: 'line', color: '$accentSecondary' } },
+      { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 5 }, data: { columns: 2, gap: 5, borderRadius: 4 } },
+      { type: 'text', grid: { x: 1, y: 7, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Favorite memory, place, reflection…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
+    ],
+  },
+]
+
+// ─── Photo-a-Day cover (created atomically at journal creation, never via the generic
+// Layouts picker — see decision 6/7 in the architecture plan) ─────────────────────────
+export const PHOTO_A_DAY_COVER_LAYOUT = {
+  id: 'photo-a-day-cover', name: 'Photo-a-Day Cover', icon: '📖',
+  elements: [
+    { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+      title: '', subtitle: '', titleAlign: 'center', titleFont: 'Georgia, serif',
+      overlayColor: '#00000055', titleColor: '#ffffff', subtitleColor: '#ffffffcc',
+    } },
+  ],
+}

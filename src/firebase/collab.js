@@ -50,6 +50,10 @@ export async function pushJournal(notebook) {
     name: notebook.name ?? '',
     theme: notebook.theme ?? {},
     pageSize: notebook.pageSize ?? '8x10',
+    journalKind: notebook.journalKind ?? 'trip',
+    photoDayMode: notebook.photoDayMode ?? null,
+    journalYear: notebook.journalYear ?? null,
+    spreadYear: notebook.spreadYear ?? null,
     updatedAt: serverTimestamp(),
   }, { merge: true })
 }
@@ -66,6 +70,11 @@ export async function pushPage(notebookId, page) {
       location: page.location ?? '',
       date: page.date ?? '',
       order: page.order ?? 0,
+      pageKind: page.pageKind ?? null,
+      spreadId: page.spreadId ?? null,
+      monthKey: page.monthKey ?? null,
+      spreadSide: page.spreadSide ?? null,
+      themeOverrides: page.themeOverrides ?? {},
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -89,6 +98,16 @@ export async function pushElement(notebookId, element) {
       type: element.type,
       grid: element.grid,
       data: stripBlobs(element.data),
+      role: element.role ?? null,
+      // Pre-existing gap closed here (not introduced by this feature, but load-bearing for
+      // it): without these, a collaborator's synced copy of a Month-Style/Backpacking-
+      // restyled element loses themeManaged status, silently breaking restyle correctness
+      // (computeElementRestyle short-circuits on any element that isn't themeManaged) on
+      // their end even though it renders correctly.
+      themeManaged: element.themeManaged ?? null,
+      sourceThemeId: element.sourceThemeId ?? null,
+      sourceTemplateId: element.sourceTemplateId ?? null,
+      themeTokenProvenance: element.themeTokenProvenance ?? null,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -112,6 +131,11 @@ export async function pushAllElements(notebookId, elements) {
         type: el.type,
         grid: el.grid,
         data: stripBlobs(el.data),
+        role: el.role ?? null,
+        themeManaged: el.themeManaged ?? null,
+        sourceThemeId: el.sourceThemeId ?? null,
+        sourceTemplateId: el.sourceTemplateId ?? null,
+        themeTokenProvenance: el.themeTokenProvenance ?? null,
         updatedAt: serverTimestamp(),
       },
       { merge: true },

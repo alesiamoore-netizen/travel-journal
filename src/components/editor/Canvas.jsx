@@ -21,11 +21,12 @@ import { useMobile } from '../../hooks/useMobile'
 // No compaction + allow overlap (elements stay exactly where placed, can overlap freely)
 const OVERLAP_COMPACTOR = getCompactor(null, true)
 
-const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx, elements: elementsProp, readOnly }, ref) {
+const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeight, bleedPx, marginPx, elements: elementsProp, readOnly, page }, ref) {
   const store = useEditorStore()
   const isMobile = useMobile()
   const elements = elementsProp ?? store.elements
   const { selectedId, select, deselect, updateElementGrid, printOverlay, notebook } = store
+  const effectiveTheme = { ...notebook?.theme, ...(page?.themeOverrides ?? {}) }
 
   const layout = elements.map(e => ({
     i: e.id,
@@ -58,10 +59,10 @@ const Canvas = forwardRef(function Canvas({ canvasWidth, displayHeight, rowHeigh
       style={{
         width: canvasWidth,
         height: displayHeight,
-        backgroundColor: notebook?.theme?.backgroundColor ?? '#ffffff',
-        '--font-heading': notebook?.theme?.fontHeading ?? 'Georgia',
-        '--font-body': notebook?.theme?.fontBody ?? 'system-ui',
-        ...getTextureStyle(notebook?.theme?.backgroundTexture),
+        backgroundColor: effectiveTheme?.backgroundColor ?? '#ffffff',
+        '--font-heading': effectiveTheme?.fontHeading ?? 'Georgia',
+        '--font-body': effectiveTheme?.fontBody ?? 'system-ui',
+        ...getTextureStyle(effectiveTheme?.backgroundTexture),
       }}
       onClick={() => !readOnly && deselect()}
     >

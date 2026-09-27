@@ -43,17 +43,9 @@ export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPa
   const pageW = spec.widthIn + BLEED_IN * 2
   const pageH = spec.heightIn + BLEED_IN * 2
   const orientation = spec.widthIn > spec.heightIn ? 'l' : 'p'
-  const accent = notebook?.theme?.accentColor ?? '#c0813a'
-  const [ar, ag, ab] = hexToRgb(accent)
 
   const bodyY = HEADER_H
   const bodyH = pageH - HEADER_H - FOOTER_H
-
-  // Faded accent for footer rule (blend with white at 35%)
-  const fade = 0.35
-  const fr = Math.round(ar * fade + 255 * (1 - fade))
-  const fg = Math.round(ag * fade + 255 * (1 - fade))
-  const fb = Math.round(ab * fade + 255 * (1 - fade))
 
   const pdf = new jsPDF({ orientation, unit: 'in', format: [pageW, pageH], compress: true })
 
@@ -89,7 +81,17 @@ export async function exportNotebookPdf({ notebook, pages, getCanvasEl, switchPa
       pdf.addImage(snapshot.toDataURL('image/jpeg', 0.93), 'JPEG', 0, bodyY, pageW, bodyH)
 
       // ── Running header ────────────────────────────────────────────────
+      // Per-page effective accent — a page's themeOverrides (e.g. a Monthly Spread's
+      // seasonal style) must be reflected here too, not just the notebook's base accent,
+      // since this header is drawn independently with jsPDF primitives rather than by
+      // rendering the live PageHeader/PageFooter components.
       const page = pages[i]
+      const accent = page?.themeOverrides?.accentColor ?? notebook?.theme?.accentColor ?? '#c0813a'
+      const [ar, ag, ab] = hexToRgb(accent)
+      const fade = 0.35
+      const fr = Math.round(ar * fade + 255 * (1 - fade))
+      const fg = Math.round(ag * fade + 255 * (1 - fade))
+      const fb = Math.round(ab * fade + 255 * (1 - fade))
       const dateStr = fmtDate(page?.date)
       const locDate = [page?.location, dateStr].filter(Boolean).join(' · ')
 

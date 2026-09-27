@@ -1,5 +1,5 @@
 export default function PageHeader({ notebook, page, pageNumber, canvasWidth }) {
-  const accent = notebook?.theme?.accentColor ?? '#c0813a'
+  const accent = page?.themeOverrides?.accentColor ?? notebook?.theme?.accentColor ?? '#c0813a'
   const font = notebook?.theme?.fontHeading ?? 'Georgia, serif'
 
   const dateStr = page?.date
@@ -33,8 +33,8 @@ export default function PageHeader({ notebook, page, pageNumber, canvasWidth }) 
   )
 }
 
-export function PageFooter({ notebook, pageNumber, canvasWidth }) {
-  const accent = notebook?.theme?.accentColor ?? '#c0813a'
+export function PageFooter({ notebook, page, pageNumber, canvasWidth }) {
+  const accent = page?.themeOverrides?.accentColor ?? notebook?.theme?.accentColor ?? '#c0813a'
   const font = notebook?.theme?.fontHeading ?? 'Georgia, serif'
 
   return (

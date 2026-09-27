@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc,
-  query, where, orderBy, writeBatch, serverTimestamp,
+  query, where, orderBy, writeBatch, serverTimestamp, runTransaction,
 } from 'firebase/firestore'
 import { firestoreDb } from './config'
 
@@ -130,6 +130,88 @@ export async function fsBatchUpdateElements(uid, updates) {
     }
   }
   return { succeededIds, failedAt: null, error: null }
+}
+
+// ── Atomic multi-document writes (Photo-a-Day / Monthly Spreads) ──────────────
+
+// One writeBatch across any mix of new docs, patches, and deletes — either fully commits
+// or writes nothing. Used everywhere this plan requires "notebook + pages + elements in one
+// atomic operation" instead of sequential writes with a rollback fallback.
+async function fsCommitBatch(uid, { sets = [], updates = [], deletes = [] }) {
+  const batch = writeBatch(firestoreDb)
+  sets.forEach(({ col, data }) => batch.set(userDoc(uid, col, data.id), data))
+  updates.forEach(({ col, id, patch }) => batch.update(userDoc(uid, col, id), patch))
+  deletes.forEach(({ col, id }) => batch.delete(userDoc(uid, col, id)))
+  await batch.commit()
+}
+
+// Commits the notebook doc plus all 24 Monthly Spreads pages plus all their elements in one
+// atomic batch (~100-125 ops for a full 12-month preset, well under Firestore's 500-op cap).
+// Either the whole journal exists afterward, or none of it does — no rollback logic needed.
+export async function fsCreateMonthlySpreadsJournal(uid, { notebook, pages, elements }) {
+  await fsCommitBatch(uid, {
+    sets: [
+      { col: 'notebooks', data: notebook },
+      ...pages.map(p => ({ col: 'pages', data: p })),
+      ...elements.map(el => ({ col: 'elements', data: el })),
+    ],
+  })
+}
+
+// Commits the notebook doc plus its one cover page plus the cover's elements in one atomic
+// batch — never the generic lazy-blank-page fallback, so the result is always either a
+// complete Photo-a-Day journal with its styled cover, or no journal at all.
+export async function fsCreatePhotoADayJournal(uid, { notebook, page, elements }) {
+  await fsCommitBatch(uid, {
+    sets: [
+      { col: 'notebooks', data: notebook },
+      { col: 'pages', data: page },
+      ...elements.map(el => ({ col: 'elements', data: el })),
+    ],
+  })
+}
+
+// A spread's "Month Style" change: both pages' themeOverrides patch and every affected
+// element's restyle patch, committed together in one atomic batch — page colors and element
+// colors can never diverge from a partial failure.
+export async function fsApplyMonthStyle(uid, { pageUpdates, elementUpdates }) {
+  await fsCommitBatch(uid, {
+    updates: [
+      ...pageUpdates.map(({ id, patch }) => ({ col: 'pages', id, patch })),
+      ...elementUpdates.map(({ id, patch }) => ({ col: 'elements', id, patch })),
+    ],
+  })
+}
+
+// Manual month-spread insertion into an existing trip journal: the 2 new pages + their
+// elements, plus (when under the operation-count guard) the renumbered `order` for pages
+// after the insertion point — all in one atomic batch.
+export async function fsInsertMonthSpread(uid, { pages, elements, orderUpdates = [] }) {
+  await fsCommitBatch(uid, {
+    sets: [
+      ...pages.map(p => ({ col: 'pages', data: p })),
+      ...elements.map(el => ({ col: 'elements', data: el })),
+    ],
+    updates: orderUpdates.map(({ id, order }) => ({ col: 'pages', id, patch: { order } })),
+  })
+}
+
+// Race-safe daily-entry creation: a Firestore transaction reading the deterministic page-id
+// doc first. If it already exists, no write happens and the existing doc is returned — this
+// is what makes two near-simultaneous "+Today's Entry" clicks (e.g. two collab clients)
+// converge on one page instead of racing: the loser's transaction retries against the
+// now-existing document and correctly resolves to "already exists." If absent, the page doc
+// and every element doc are written together in the SAME transaction — there is no
+// intermediate state where a blank page exists without its content.
+export async function fsCreateDailyEntryIfAbsent(uid, dateStr, pageDoc, elementDocs) {
+  return runTransaction(firestoreDb, async (tx) => {
+    const ref = userDoc(uid, 'pages', pageDoc.id)
+    const snap = await tx.get(ref)
+    if (snap.exists()) return { created: false, page: snap.data() }
+    tx.set(ref, pageDoc)
+    for (const el of elementDocs) tx.set(userDoc(uid, 'elements', el.id), el)
+    return { created: true, page: pageDoc }
+  })
 }
 
 // ── Photos ────────────────────────────────────────────────────────────────────

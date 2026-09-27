@@ -9,6 +9,12 @@ import { LAYOUTS, LAYOUT_CATEGORIES } from '../../data/layouts'
 import { THEMES, orderStickersForTheme } from '../../data/themes'
 import AiCaptionButton from './AiCaptionButton'
 import ThemeDetailModal from './ThemeDetailModal'
+import DailyLayoutPicker from './DailyLayoutPicker'
+import MonthStyleModal from './MonthStyleModal'
+import InsertMonthSpreadModal from './InsertMonthSpreadModal'
+import PhotoADayProgress from './PhotoADayProgress'
+
+const MONTH_SPREAD_CAT = '🗓️ Monthly Spread'
 
 // ── Shared Drawer shell ────────────────────────────────────────────────────────
 function Drawer({ open, onClose, title, onBack, children }) {
@@ -32,10 +38,11 @@ function Drawer({ open, onClose, title, onBack, children }) {
 
 // ── Pages drawer ──────────────────────────────────────────────────────────────
 function PagesDrawer({ onClose }) {
-  const { pages, currentPageId, switchPage, insertPageAfter, deletePage, movePage, duplicatePage, updatePage } = useEditorStore()
+  const { pages, currentPageId, notebook, switchPage, insertPageAfter, deletePage, deleteDailyEntry, movePage, duplicatePage, updatePage } = useEditorStore()
   const [editingId, setEditingId] = useState(null)
   const editPage = pages.find(p => p.id === editingId)
   const upd = patch => updatePage(editingId, patch)
+  const isPhotoADay = notebook?.journalKind === 'photo-a-day'
 
   if (editingId) {
     return (
@@ -55,8 +62,15 @@ function PagesDrawer({ onClose }) {
           </div>
           <div>
             <label className="block text-xs text-stone-400 mb-1.5 font-medium uppercase tracking-wide">Date</label>
-            <input type="date" value={editPage?.date ?? ''} onChange={e => upd({ date: e.target.value })}
-              className="w-full border border-stone-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            {editPage?.pageKind === 'daily-entry' ? (
+              <>
+                <div className="w-full border border-stone-200 rounded-xl px-4 py-3 text-base bg-stone-50 text-stone-600">{editPage.date}</div>
+                <p className="text-[11px] text-stone-400 mt-1">Daily entries are dated when created — delete and re-add to change the date.</p>
+              </>
+            ) : (
+              <input type="date" value={editPage?.date ?? ''} onChange={e => upd({ date: e.target.value })}
+                className="w-full border border-stone-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            )}
           </div>
           <button onClick={() => setEditingId(null)}
             className="w-full py-3 rounded-xl bg-amber-700 text-white font-semibold active:bg-amber-800">Done</button>
@@ -82,32 +96,44 @@ function PagesDrawer({ onClose }) {
               </div>
             </button>
 
-            {/* Controls */}
+            {/* Controls — Photo-a-Day journals only get edit + delete (daily entries only,
+                never the cover); the generic move/insert/duplicate UI is hidden there. */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button onClick={() => movePage(p.id, -1)} disabled={i === 0}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200 disabled:opacity-20 text-sm">▲</button>
-              <button onClick={() => movePage(p.id, 1)} disabled={i === pages.length - 1}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200 disabled:opacity-20 text-sm">▼</button>
-              <button onClick={() => insertPageAfter(p.id)}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-amber-100 hover:text-amber-700 text-base font-medium"
-                title="Insert page after">+</button>
+              {!isPhotoADay && (
+                <>
+                  <button onClick={() => movePage(p.id, -1)} disabled={i === 0}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200 disabled:opacity-20 text-sm">▲</button>
+                  <button onClick={() => movePage(p.id, 1)} disabled={i === pages.length - 1}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200 disabled:opacity-20 text-sm">▼</button>
+                  <button onClick={() => insertPageAfter(p.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-amber-100 hover:text-amber-700 text-base font-medium"
+                    title="Insert page after">+</button>
+                </>
+              )}
               <button onClick={() => setEditingId(p.id)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.1 2.1 0 113 3L7 20.25H4v-3L16.862 4.487z" />
                 </svg>
               </button>
-              {pages.length > 1 && (
+              {isPhotoADay ? (
+                p.pageKind === 'daily-entry' && (
+                  <button onClick={() => { if (window.confirm("Permanently delete this day's entry? This can't be undone.")) deleteDailyEntry(p.id) }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 text-lg leading-none">×</button>
+                )
+              ) : pages.length > 1 && (
                 <button onClick={() => deletePage(p.id)}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 text-lg leading-none">×</button>
               )}
             </div>
           </div>
         ))}
-        <button onClick={() => { insertPageAfter(pages[pages.length - 1]?.id); onClose() }}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-stone-300 text-stone-500 text-sm font-medium hover:bg-stone-50">
-          + Add page at end
-        </button>
+        {!isPhotoADay && (
+          <button onClick={() => { insertPageAfter(pages[pages.length - 1]?.id); onClose() }}
+            className="w-full py-3 rounded-xl border-2 border-dashed border-stone-300 text-stone-500 text-sm font-medium hover:bg-stone-50">
+            + Add page at end
+          </button>
+        )}
       </div>
     </Drawer>
   )
@@ -148,9 +174,12 @@ function LayoutsDrawer({ onClose }) {
   const theme = THEMES.find(t => t.id === notebook?.theme?.themeId)
   const hasThemeContent = !!(theme?.covers?.length || theme?.layouts?.length)
   const themeCatLabel = hasThemeContent ? `${theme.icon} ${theme.label}` : null
+  const isTripJournal = (notebook?.journalKind ?? 'trip') === 'trip'
   const [cat, setCat] = useState(themeCatLabel ?? 'Basic')
-  const categories = [...(themeCatLabel ? [themeCatLabel] : []), ...LAYOUT_CATEGORIES]
+  const [showInsertSpread, setShowInsertSpread] = useState(false)
+  const categories = [...(themeCatLabel ? [themeCatLabel] : []), ...LAYOUT_CATEGORIES, ...(isTripJournal ? [MONTH_SPREAD_CAT] : [])]
   const isThemeCat = hasThemeContent && cat === themeCatLabel
+  const isMonthSpreadCat = cat === MONTH_SPREAD_CAT
 
   const themeGroups = isThemeCat
     ? Object.entries([...theme.covers, ...theme.layouts].reduce((acc, item) => {
@@ -180,7 +209,16 @@ function LayoutsDrawer({ onClose }) {
           </button>
         ))}
       </div>
-      {isThemeCat ? (
+      {isMonthSpreadCat ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-10 px-6 text-center">
+          <span className="text-3xl">🗓️</span>
+          <p className="text-sm text-stone-600">Insert a coordinated two-page spread for a chosen month.</p>
+          <button onClick={() => setShowInsertSpread(true)}
+            className="px-4 py-2.5 text-sm bg-amber-700 text-white rounded-xl font-medium active:bg-amber-800">
+            Insert Month Spread…
+          </button>
+        </div>
+      ) : isThemeCat ? (
         <div className="p-4 space-y-5">
           {themeGroups.map(([group, items]) => (
             <div key={group}>
@@ -211,6 +249,9 @@ function LayoutsDrawer({ onClose }) {
             </button>
           ))}
         </div>
+      )}
+      {showInsertSpread && (
+        <InsertMonthSpreadModal onClose={() => { setShowInsertSpread(false); onClose() }} />
       )}
     </Drawer>
   )
@@ -686,9 +727,17 @@ function Tog({ on, onClick, children }) {
 export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, exporting }) {
   const [drawer, setDrawer] = useState(null)
   const [showTheme, setShowTheme] = useState(false)
-  const { pages, currentPageId, selectedId, elements } = useEditorStore()
+  const [showDailyCreate, setShowDailyCreate] = useState(false)
+  const [showDailyStyle, setShowDailyStyle] = useState(false)
+  const [showMonthStyle, setShowMonthStyle] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
+  const { pages, currentPageId, selectedId, elements, notebook } = useEditorStore()
   const currentIdx = pages.findIndex(p => p.id === currentPageId)
   const selectedEl = elements.find(e => e.id === selectedId) ?? null
+  const currentPage = pages.find(p => p.id === currentPageId)
+  const isPhotoADay = notebook?.journalKind === 'photo-a-day'
+  const isDailyEntryPage = currentPage?.pageKind === 'daily-entry'
+  const isSpreadPage = currentPage?.pageKind === 'spread'
 
   return (
     <>
@@ -732,8 +781,9 @@ export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, expor
           <span className="text-[10px] font-medium">Page {currentIdx + 1}/{pages.length}</span>
         </button>
 
-        <button onClick={() => setDrawer('add')}
-          className="flex-shrink-0 w-14 h-14 -mt-5 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-lg border-4 border-white active:bg-amber-800">
+        <button onClick={() => (isPhotoADay ? setShowDailyCreate(true) : setDrawer('add'))}
+          className="flex-shrink-0 w-14 h-14 -mt-5 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-lg border-4 border-white active:bg-amber-800"
+          title={isPhotoADay ? "Today's Entry" : 'Add'}>
           <span className="text-2xl leading-none font-light">+</span>
         </button>
 
@@ -754,6 +804,42 @@ export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, expor
       {drawer === 'more' && (
         <Drawer open title="More options" onClose={() => setDrawer(null)}>
           <div className="p-4 space-y-3">
+            {isPhotoADay && (
+              <button
+                onClick={() => { setShowProgress(true); setDrawer(null) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-700 flex items-center justify-center flex-shrink-0 text-white text-lg">📊</div>
+                <div className="text-left">
+                  <div className="font-semibold text-stone-800">Progress</div>
+                  <div className="text-xs text-stone-500">See which days have entries</div>
+                </div>
+              </button>
+            )}
+            {isPhotoADay && isDailyEntryPage && (
+              <button
+                onClick={() => { setShowDailyStyle(true); setDrawer(null) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-700 flex items-center justify-center flex-shrink-0 text-white text-lg">📸</div>
+                <div className="text-left">
+                  <div className="font-semibold text-stone-800">Daily Style</div>
+                  <div className="text-xs text-stone-500">Switch this entry's layout — content carries over</div>
+                </div>
+              </button>
+            )}
+            {isSpreadPage && (
+              <button
+                onClick={() => { setShowMonthStyle(true); setDrawer(null) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-700 flex items-center justify-center flex-shrink-0 text-white text-lg">🗓️</div>
+                <div className="text-left">
+                  <div className="font-semibold text-stone-800">Month Style</div>
+                  <div className="text-xs text-stone-500">Change this spread's seasonal styling</div>
+                </div>
+              </button>
+            )}
             <button
               onClick={() => { onAiDraft?.(); setDrawer(null) }}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-amber-50 border border-amber-100 active:bg-amber-100"
@@ -811,6 +897,12 @@ export default function MobileEditorBar({ onExportPdf, onShare, onAiDraft, expor
         </Drawer>
       )}
       {showTheme && <ThemeDetailModal onClose={() => setShowTheme(false)} />}
+      {showDailyCreate && <DailyLayoutPicker mode="create" onClose={() => setShowDailyCreate(false)} />}
+      {showDailyStyle && <DailyLayoutPicker mode="convert" pageId={currentPageId} onClose={() => setShowDailyStyle(false)} />}
+      {showMonthStyle && currentPage?.spreadId && (
+        <MonthStyleModal spreadId={currentPage.spreadId} onClose={() => setShowMonthStyle(false)} />
+      )}
+      {showProgress && <PhotoADayProgress onClose={() => setShowProgress(false)} />}
     </>
   )
 }

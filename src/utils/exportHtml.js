@@ -76,7 +76,17 @@ export async function exportNotebookHtml({ notebook, pages, elements, onProgress
     const metaParts = [page.location, page.date].filter(Boolean)
     const metaHtml = metaParts.length ? `<p class="page-meta">${metaParts.join(' · ')}</p>` : ''
 
-    return `<article id="page-${page.id}" class="page">
+    // A page's own themeOverrides (e.g. a Monthly Spread's seasonal style) must override the
+    // document-wide --accent/--bg custom properties for this page specifically — an inline
+    // style on the article re-declares them, which every var(--accent)/var(--bg) inside it
+    // then picks up via normal CSS cascade.
+    const pageAccent = page.themeOverrides?.accentColor
+    const pageBg = page.themeOverrides?.backgroundColor
+    const overrideStyle = (pageAccent || pageBg)
+      ? ` style="${pageAccent ? `--accent:${pageAccent};` : ''}${pageBg ? `--bg:${pageBg};` : ''}"`
+      : ''
+
+    return `<article id="page-${page.id}" class="page"${overrideStyle}>
   ${titleHtml || metaHtml ? `<header class="page-header">${titleHtml}${metaHtml}</header>` : ''}
   <div class="page-content">${elHtml || '<p class="empty-page">No content</p>'}</div>
 </article>`

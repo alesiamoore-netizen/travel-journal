@@ -51,6 +51,7 @@ export default function PreviewModal({ onClose }) {
         <Canvas
           elements={elements}
           readOnly
+          page={currentPage}
           canvasWidth={canvasWidth}
           displayHeight={metrics.displayHeight}
           rowHeight={metrics.rowHeight}
@@ -59,6 +60,7 @@ export default function PreviewModal({ onClose }) {
         />
         <PageFooter
           notebook={notebook}
+          page={currentPage}
           pageNumber={currentPageIdx + 1}
           canvasWidth={canvasWidth}
         />
