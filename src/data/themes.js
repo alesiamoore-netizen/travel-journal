@@ -176,6 +176,15 @@ function BACKPACKING_LAYOUTS() {
 
 // ─── Road Trip content authoring ────────────────────────────────────────
 
+// Photo treatment / `$photoFrame` token: ImageElement's own `borderStyle` field has no color
+// parameter (its 5 variants are hardcoded white/black), and CollageElement has no color-facing
+// field at all — neither is a compatible primitive for a token-driven border/frame color, and
+// per the architecture no new renderer field is invented to force one. `captionColor` is the
+// one real, already-supported, literal-hex-driven field ImageElement has, so `$photoFrame` is
+// applied there (with `captionStyle: 'overlay'`, rendered directly on the photo) on the image
+// elements below — a genuine, restyle-compatible, theme-managed photo-adjacent color, using an
+// existing primitive rather than a border color that doesn't exist yet.
+
 const RH = 'Montserrat'
 const RB = 'Nunito'
 
@@ -223,7 +232,7 @@ function ROAD_TRIP_LAYOUTS() {
     {
       id: 'rt-hero-road', name: 'Hero Road Photograph', icon: '🛣️', group: 'Photo',
       elements: [
-        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover' } },
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover', caption: 'Somewhere along the highway', captionStyle: 'overlay', captionColor: '$photoFrame' } },
         { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Open Road'), fontFamily: RH, fontSize: 28, color: '$heading' } },
         { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Route · Date'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
         { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'arrow', color: '$paper', rotation: 25, opacity: 0.9 }, minDecorationLevel: 'standard' },
@@ -233,7 +242,7 @@ function ROAD_TRIP_LAYOUTS() {
     {
       id: 'rt-roadside-attraction', name: 'Roadside Attraction', icon: '🎡', group: 'Photo',
       elements: [
-        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover' } },
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover', caption: 'Worth the detour', captionStyle: 'overlay', captionColor: '$photoFrame' } },
         { type: 'text', grid: { x: 0, y: 9, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc("World's Biggest…"), fontFamily: RH, fontSize: 24, color: '$heading' } },
         { type: 'text', grid: { x: 0, y: 11, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('Why we stopped, what it was like…'), fontFamily: RB, fontSize: 13, color: '$body' } },
         { type: 'sticker', grid: { x: 0, y: 7, w: 3, h: 3 }, data: { stickerId: 'roadsign', color: '$accentSecondary', rotation: -10, opacity: 0.9 }, minDecorationLevel: 'standard' },
@@ -253,7 +262,7 @@ function ROAD_TRIP_LAYOUTS() {
     {
       id: 'rt-photo-writing', name: 'Photo + Story', icon: '📓', group: 'Writing',
       elements: [
-        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1 } },
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1, caption: 'Mile after mile', captionStyle: 'overlay', captionColor: '$photoFrame' } },
         { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('On the Road'), fontFamily: RH, fontSize: 22, color: '$heading' } },
         { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('What the highway looked like, who we talked to, where we stopped…'), fontFamily: RB, fontSize: 13, color: '$body' } },
         { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'arrow', color: '$accent', rotation: 15, opacity: 0.9 }, minDecorationLevel: 'standard' },
