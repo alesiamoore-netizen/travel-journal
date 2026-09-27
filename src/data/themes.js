@@ -362,6 +362,187 @@ function ROAD_TRIP_LAYOUTS() {
   ]
 }
 
+// ─── City Break content authoring ───────────────────────────────────────
+
+// Photo treatment / `$photoFrame` token: same closed gap as Road Trip — ImageElement's
+// `borderStyle` has no color parameter and CollageElement has no color-facing field at all, so
+// `captionColor` (the one real, already-supported literal-hex field) is themed via `$photoFrame`
+// on 3 authored image layouts below, with `captionStyle: 'overlay'`. No new renderer field.
+
+const CH = 'Montserrat'
+const CB = 'Montserrat'
+
+function CITY_BREAK_COVERS() {
+  return [
+    {
+      id: 'cb-cover-skyline', name: 'Skyline', icon: '🏙️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${CH}, sans-serif`,
+          overlayColor: '#1e3a5f70', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'thick', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 8, y: 1, w: 3, h: 3 }, data: { stickerId: 'skyline', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cb-cover-street-grid', name: 'Street Grid', icon: '🗺️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'left', titleFont: `${CH}, sans-serif`,
+          overlayColor: '#2b2b2b6b', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 0, y: 8, w: 12, h: 1 }, data: { style: 'dotted', color: '$paper' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 9, y: 1, w: 2, h: 2 }, data: { stickerId: 'taxi', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cb-cover-city-lights', name: 'City Lights', icon: '🌃', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${CH}, sans-serif`,
+          overlayColor: '#1e2a3875', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'skyline', color: '$accentSecondary', rotation: 0, opacity: 0.95 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'thick', color: '$accentSecondary' }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
+function CITY_BREAK_LAYOUTS() {
+  return [
+    // ─── PHOTO ───────────────────────────────────────────────
+    {
+      id: 'cb-hero-architecture', name: 'Hero Architecture Photograph', icon: '🏛️', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover', caption: 'Looking up', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Architecture'), fontFamily: CH, fontSize: 28, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Neighborhood · Date'), fontFamily: CB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'skyline', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 1, y: 14, w: 10, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cb-streets-collage', name: 'Streets & Architectural Details', icon: '🖼️', group: 'Photo',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Streets & Details'), fontFamily: CH, fontSize: 26, color: '$heading' } },
+        { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 12 }, data: { columns: 2, gap: 6, borderRadius: 2 } },
+        { type: 'text', grid: { x: 1, y: 14, w: 10, h: 2 }, data: { textStyle: 'caption', content: doc('Doorways, signs, and everything in between…'), fontFamily: CB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+    {
+      id: 'cb-cafe', name: 'Café & Food', icon: '☕', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover', caption: 'Table for one', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 9, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Café Notes'), fontFamily: CH, fontSize: 24, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('What we ordered, what it cost, whether we’d go back…'), fontFamily: CB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 7, w: 3, h: 3 }, data: { stickerId: 'ticket', color: '$accentSecondary', rotation: -8, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cb-night-city', name: 'Night in the City', icon: '🌃', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 10 }, data: { fit: 'cover' } },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('After Dark'), fontFamily: CH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 4 }, data: { textStyle: 'body', content: doc('The city at night — lights, sounds, where we ended up…'), fontFamily: CB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 8, w: 3, h: 3 }, data: { stickerId: 'skyline', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── WRITING ─────────────────────────────────────────────
+    {
+      id: 'cb-photo-writing', name: 'Photo + Story', icon: '📓', group: 'Writing',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1, caption: 'A city block', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('City Notes'), fontFamily: CH, fontSize: 22, color: '$heading' } },
+        { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('What the streets felt like, who we met, what we noticed…'), fontFamily: CB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'camera', color: '$accent', rotation: 10, opacity: 0.9 }, minDecorationLevel: 'standard' },
+      ],
+    },
+
+    // ─── MAP & ITINERARY ─────────────────────────────────────
+    {
+      id: 'cb-neighborhood-map', name: 'Neighborhood Map', icon: '🗺️', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Neighborhood'), fontFamily: CH, fontSize: 26, color: '$heading' } },
+        { type: 'map', grid: { x: 0, y: 2, w: 12, h: 8 }, data: { tileStyle: 'minimal', mode: 'pin', showPins: true, pinColor: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 2, w: 3, h: 3 }, data: { stickerId: 'pin', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 6 }, data: { textStyle: 'body', content: doc('The blocks we walked, the corners we kept returning to…'), fontFamily: CB, fontSize: 13, color: '$body' } },
+      ],
+    },
+    {
+      id: 'cb-itinerary', name: 'Day-by-Day Itinerary', icon: '🧭', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('City Itinerary'), fontFamily: CH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 1'), fontFamily: CB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Arrival, first impressions, an easy walk…'), fontFamily: CB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 2'), fontFamily: CB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Museums, markets, the neighborhood everyone recommended…'), fontFamily: CB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3'), fontFamily: CB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('One last walk before heading home…'), fontFamily: CB, fontSize: 12, color: '$body' } },
+      ],
+    },
+    {
+      id: 'cb-transit', name: 'Transit & Walking Routes', icon: '🚇', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Getting Around'), fontFamily: CH, fontSize: 26, color: '$heading' } },
+        { type: 'divider', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { style: 'dotted', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 3, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('Metro lines, day passes, the walk that turned out to be faster…'), fontFamily: CB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 9, y: 9, w: 3, h: 3 }, data: { stickerId: 'taxi', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 2 }, data: { textStyle: 'caption', content: doc('Tickets and passes below'), fontFamily: CB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+
+    // ─── KEEPSAKE ────────────────────────────────────────────
+    {
+      id: 'cb-museum-keepsake', name: 'Museum & Ticket Keepsakes', icon: '🎫', group: 'Keepsake',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Museum & Tickets'), fontFamily: CH, fontSize: 26, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 0, y: 2, w: 6, h: 6 }, data: { label: 'Museum ticket', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' } },
+        { type: 'keepsake', grid: { x: 6, y: 2, w: 6, h: 6 }, data: { label: 'Metro pass', hint: 'Tape or glue here', style: 'dashed', borderColor: '$keepsakeBorder' } },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 7 }, data: { textStyle: 'body', content: doc('What we saw, what stuck with us…'), fontFamily: CB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 4, h: 2 }, data: { stickerId: 'stamp', color: '$accentSecondary', rotation: -3, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── OPENING & DIVIDERS ──────────────────────────────────
+    {
+      id: 'cb-city-opening', name: 'City-Opening Spread', icon: '🏙️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 }, data: { style: 'thick', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 6, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('The City'), fontFamily: CH, fontSize: 34, color: '$heading' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('City · Dates'), fontFamily: CB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 12, w: 8, h: 1 }, data: { style: 'thick', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'skyline', color: '$accent', rotation: 0, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cb-neighborhood-divider', name: 'Neighborhood Divider', icon: '🏘️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 1, y: 5, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Neighborhood Name'), fontFamily: CH, fontSize: 38, color: '$heading' } },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'thick', color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Exploring · Date'), fontFamily: CB, fontSize: 11, color: '$muted' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 2, h: 2 }, data: { stickerId: 'pin', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'cb-postcard-closing', name: 'Postcard & City Reflections', icon: '💌', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Wish You Were Here'), fontFamily: CH, fontSize: 30, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 1, y: 3, w: 10, h: 5 }, data: { label: 'Postcard', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'thick', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 10, w: 10, h: 5 }, data: { textStyle: 'body', content: doc('What we’ll remember about this city…'), fontFamily: CB, fontSize: 14, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 14, w: 2, h: 2 }, data: { stickerId: 'stamp', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
 export const THEMES = [
   // ─── OCCASION ──────────────────────────────────────────────
   {
@@ -408,11 +589,29 @@ export const THEMES = [
   },
   {
     id: 'city-break', label: 'City Break', category: 'Occasion', icon: '🏙️',
-    accentColor: '#1e3a5f', accentColorSecondary: '#9d4f6a',
-    backgroundColor: '#f8fafc', backgroundTexture: 'grid',
+    // Third reference theme, after Backpacking and Road Trip — tokens/covers/layouts below.
+    accentColor: '#1e3a5f', accentColorSecondary: '#e8a317',
+    backgroundColor: '#f5f2ea', backgroundTexture: 'blueprint',
     fontHeading: 'Montserrat', fontBody: 'Montserrat',
-    stickers: ['camera', 'pin', 'ticket', 'frame', 'stamp'],
+    stickers: ['skyline', 'taxi', 'camera', 'pin', 'ticket', 'frame', 'stamp'],
     templates: ['city-walk', 'landmark', 'museum', 'cafe'],
+    tokens: {
+      paper: '#f5f2ea',
+      surface: '#e8e3d8',
+      heading: '#1e3a5f',
+      body: '#33332f',
+      muted: '#8a8680',
+      accent: '#1e3a5f',
+      accentSecondary: '#e8a317',
+      brickRed: '#a8402c',
+      tealMuted: '#4a7a78',
+      border: '#b8b2a0',
+      mapRoute: '#4a7a78',
+      photoFrame: '#f5f2ea',
+      keepsakeBorder: '#2b2b2b',
+    },
+    covers: CITY_BREAK_COVERS(),
+    layouts: CITY_BREAK_LAYOUTS(),
   },
   {
     id: 'backpacking', label: 'Backpacking', category: 'Occasion', icon: '🎒',

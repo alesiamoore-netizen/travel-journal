@@ -19,6 +19,8 @@ export const STICKER_LIST = [
   { id: 'ticket',   label: 'Ticket'   },
   { id: 'roadsign', label: 'Road Sign' },
   { id: 'mileage',  label: 'Mile Marker' },
+  { id: 'skyline',  label: 'Skyline' },
+  { id: 'taxi',     label: 'Taxi' },
 ]
 
 function StickerSVG({ id, color }) {
@@ -191,6 +193,28 @@ function StickerSVG({ id, color }) {
         <rect x="28" y="46" width="6" height="46" fill={c} fillOpacity="0.5"/>
         <rect x="4" y="6" width="54" height="42" rx="4" fill={c} fillOpacity="0.16" stroke={c} strokeWidth="2.5"/>
         <text x="31" y="34" textAnchor="middle" fontSize="20" fontFamily="Georgia,serif" fill={c} fontWeight="bold">14</text>
+      </svg>
+    )
+    case 'skyline': return (
+      <svg viewBox="0 0 100 70" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="30" width="14" height="38" fill={c} fillOpacity="0.5"/>
+        <rect x="20" y="14" width="16" height="54" fill={c} fillOpacity="0.7"/>
+        <line x1="28" y1="14" x2="28" y2="4" stroke={c} strokeWidth="2"/>
+        <rect x="38" y="24" width="13" height="44" fill={c} fillOpacity="0.45"/>
+        <rect x="53" y="8" width="17" height="60" fill={c} fillOpacity="0.75"/>
+        <rect x="72" y="34" width="12" height="34" fill={c} fillOpacity="0.5"/>
+        <rect x="86" y="20" width="10" height="48" fill={c} fillOpacity="0.6"/>
+        <line x1="2" y1="68" x2="98" y2="68" stroke={c} strokeWidth="2"/>
+      </svg>
+    )
+    case 'taxi': return (
+      <svg viewBox="0 0 100 60" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 40 L16 22 Q20 16 30 16 L70 16 Q80 16 84 22 L90 40 Z" fill="none" stroke={c} strokeWidth="2.5"/>
+        <rect x="4" y="38" width="92" height="10" rx="4" fill="none" stroke={c} strokeWidth="2.5"/>
+        <circle cx="26" cy="48" r="8" fill={c} fillOpacity="0.2" stroke={c} strokeWidth="2.5"/>
+        <circle cx="74" cy="48" r="8" fill={c} fillOpacity="0.2" stroke={c} strokeWidth="2.5"/>
+        <rect x="36" y="20" width="28" height="8" rx="1" fill={c} fillOpacity="0.18" stroke={c} strokeWidth="1.5"/>
+        <text x="50" y="33" textAnchor="middle" fontSize="9" fontFamily="Georgia,serif" fill={c} fontWeight="bold" letterSpacing="1">TAXI</text>
       </svg>
     )
     default: return <svg viewBox="0 0 100 100" className="w-full h-full"><circle cx="50" cy="50" r="40" fill={c} fillOpacity="0.3"/></svg>

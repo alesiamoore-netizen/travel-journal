@@ -7,6 +7,7 @@ export const TEXTURES = [
   { id: 'grain', label: 'Grain' },
   { id: 'topo',  label: 'Topo' },
   { id: 'roadline', label: 'Road Line' },
+  { id: 'blueprint', label: 'Blueprint' },
 ]
 
 export function getTextureStyle(textureId) {
@@ -52,6 +53,19 @@ export function getTextureStyle(textureId) {
       return {
         backgroundImage: 'radial-gradient(ellipse 7px 1.6px at 50% 50%, rgba(0,0,0,0.16), transparent 75%)',
         backgroundSize: '22px 26px',
+      }
+    case 'blueprint':
+      // Two-tier navy-tinted grid — fine 14px lines plus a bolder line every 5 cells (70px),
+      // like architectural drafting paper — visually distinct from the plain single-scale
+      // black 'grid' texture above (different color, and minor+major lines vs. one scale).
+      return {
+        backgroundImage: [
+          'linear-gradient(rgba(30,58,95,0.10) 1px, transparent 1px)',
+          'linear-gradient(90deg, rgba(30,58,95,0.10) 1px, transparent 1px)',
+          'linear-gradient(rgba(30,58,95,0.18) 1px, transparent 1px)',
+          'linear-gradient(90deg, rgba(30,58,95,0.18) 1px, transparent 1px)',
+        ].join(', '),
+        backgroundSize: '14px 14px, 14px 14px, 70px 70px, 70px 70px',
       }
     case 'topo':
       // Concentric-ring approximation of topographic contour lines.
