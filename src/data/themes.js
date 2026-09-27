@@ -174,6 +174,185 @@ function BACKPACKING_LAYOUTS() {
   ]
 }
 
+// ─── Road Trip content authoring ────────────────────────────────────────
+
+const RH = 'Montserrat'
+const RB = 'Nunito'
+
+function ROAD_TRIP_COVERS() {
+  return [
+    {
+      id: 'rt-cover-open-road', name: 'Open Road', icon: '🛣️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${RH}, sans-serif`,
+          overlayColor: '#1e3a5f66', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'thick', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 8, y: 1, w: 3, h: 3 }, data: { stickerId: 'arrow', color: '$paper', rotation: 30, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'rt-cover-mile-zero', name: 'Mile Zero', icon: '📍', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'left', titleFont: `${RH}, sans-serif`,
+          overlayColor: '#33302a70', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 0, y: 8, w: 12, h: 1 }, data: { style: 'dotted', color: '$paper' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 9, y: 1, w: 2, h: 2 }, data: { stickerId: 'mileage', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'rt-cover-state-line', name: 'State Line', icon: '🚧', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${RH}, sans-serif`,
+          overlayColor: '#1e5f4560', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'roadsign', color: '$paper', rotation: 0, opacity: 0.95 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'thick', color: '$accentSecondary' }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
+function ROAD_TRIP_LAYOUTS() {
+  return [
+    // ─── PHOTO ───────────────────────────────────────────────
+    {
+      id: 'rt-hero-road', name: 'Hero Road Photograph', icon: '🛣️', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Open Road'), fontFamily: RH, fontSize: 28, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Route · Date'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'arrow', color: '$paper', rotation: 25, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 1, y: 14, w: 10, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'rt-roadside-attraction', name: 'Roadside Attraction', icon: '🎡', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover' } },
+        { type: 'text', grid: { x: 0, y: 9, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc("World's Biggest…"), fontFamily: RH, fontSize: 24, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('Why we stopped, what it was like…'), fontFamily: RB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 7, w: 3, h: 3 }, data: { stickerId: 'roadsign', color: '$accentSecondary', rotation: -10, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'rt-four-collage', name: 'Four-Photo Collage', icon: '🖼️', group: 'Photo',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Along the Way'), fontFamily: RH, fontSize: 26, color: '$heading' } },
+        { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 12 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
+        { type: 'text', grid: { x: 1, y: 14, w: 10, h: 2 }, data: { textStyle: 'caption', content: doc('A few snapshots from the road…'), fontFamily: RB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+
+    // ─── WRITING ─────────────────────────────────────────────
+    {
+      id: 'rt-photo-writing', name: 'Photo + Story', icon: '📓', group: 'Writing',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1 } },
+        { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('On the Road'), fontFamily: RH, fontSize: 22, color: '$heading' } },
+        { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('What the highway looked like, who we talked to, where we stopped…'), fontFamily: RB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'arrow', color: '$accent', rotation: 15, opacity: 0.9 }, minDecorationLevel: 'standard' },
+      ],
+    },
+    {
+      id: 'rt-driving-log', name: 'Daily Driving Log', icon: '📒', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3 · 214 miles'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Driving Log'), fontFamily: RH, fontSize: 26, color: '$heading' } },
+        { type: 'divider', grid: { x: 0, y: 3, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 4, w: 12, h: 12 }, data: { textStyle: 'body', content: doc('Roads taken, weather, playlist, what we saw out the window…'), fontFamily: RB, fontSize: 14, color: '$body' } },
+      ],
+    },
+    {
+      id: 'rt-stops-highlights', name: 'Stops & Highlights', icon: '📍', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Stops & Highlights'), fontFamily: RH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Stop 1'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('The first gas-station donut of the trip…'), fontFamily: RB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Stop 2'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('A scenic overlook worth the detour…'), fontFamily: RB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Stop 3'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Where we finally stopped for the night…'), fontFamily: RB, fontSize: 12, color: '$body' } },
+      ],
+    },
+
+    // ─── MAP & ITINERARY ─────────────────────────────────────
+    {
+      id: 'rt-route-map', name: 'The Route', icon: '🗺️', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Route'), fontFamily: RH, fontSize: 26, color: '$heading' } },
+        { type: 'map', grid: { x: 0, y: 2, w: 12, h: 8 }, data: { tileStyle: 'voyager', mode: 'route', showRoute: true, showPins: true, routeColor: '$mapRoute', pinColor: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 2, w: 3, h: 3 }, data: { stickerId: 'roadsign', color: '$paper', rotation: -8, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 6 }, data: { textStyle: 'body', content: doc('Miles driven · States crossed · Road trip notes…'), fontFamily: RB, fontSize: 13, color: '$body' } },
+      ],
+    },
+    {
+      id: 'rt-itinerary', name: 'Road Trip Itinerary', icon: '🧭', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Road Trip Itinerary'), fontFamily: RH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 1'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Home to the first overnight stop…'), fontFamily: RB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 2'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Crossing the state line, the long middle stretch…'), fontFamily: RB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('The final push to the destination…'), fontFamily: RB, fontSize: 12, color: '$body' } },
+      ],
+    },
+
+    // ─── KEEPSAKE ────────────────────────────────────────────
+    {
+      id: 'rt-keepsake-postcard', name: 'Postcards & Keepsakes', icon: '🎫', group: 'Keepsake',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Postcards & Keepsakes'), fontFamily: RH, fontSize: 26, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 0, y: 2, w: 6, h: 6 }, data: { label: 'Postcard', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' } },
+        { type: 'keepsake', grid: { x: 6, y: 2, w: 6, h: 6 }, data: { label: 'Gas receipt / ticket stub', hint: 'Tape or glue here', style: 'dashed', borderColor: '$keepsakeBorder' } },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 7 }, data: { textStyle: 'body', content: doc('Stories behind the souvenirs…'), fontFamily: RB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 4, h: 2 }, data: { stickerId: 'mileage', color: '$accentSecondary', rotation: -3, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── OPENING & DIVIDERS ──────────────────────────────────
+    {
+      id: 'rt-trip-opening', name: 'Trip-Opening Spread', icon: '🚗', group: 'Opening & Dividers',
+      elements: [
+        { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 }, data: { style: 'thick', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 6, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('The Road Trip Begins'), fontFamily: RH, fontSize: 34, color: '$heading' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Route · Dates'), fontFamily: RB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 12, w: 8, h: 1 }, data: { style: 'thick', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'roadsign', color: '$accent', rotation: 0, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'rt-state-divider', name: 'State / Chapter Divider', icon: '🚦', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 1, y: 5, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('State Name'), fontFamily: RH, fontSize: 40, color: '$heading' } },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'thick', color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Entering · Mile marker'), fontFamily: RB, fontSize: 11, color: '$muted' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 2, h: 2 }, data: { stickerId: 'roadsign', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'rt-trip-closing', name: 'Miles Traveled', icon: '🏁', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Miles Traveled'), fontFamily: RH, fontSize: 30, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 3, w: 12, h: 3 }, data: { textStyle: 'body', content: doc('1,842 miles · 6 states · 9 days'), fontFamily: RB, fontSize: 18, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 7, w: 8, h: 1 }, data: { style: 'thick', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 8, w: 10, h: 6 }, data: { textStyle: 'body', content: doc('What we’ll remember most about this trip…'), fontFamily: RB, fontSize: 14, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 14, w: 2, h: 2 }, data: { stickerId: 'star', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
 export const THEMES = [
   // ─── OCCASION ──────────────────────────────────────────────
   {
@@ -194,11 +373,29 @@ export const THEMES = [
   },
   {
     id: 'road-trip', label: 'Road Trip', category: 'Occasion', icon: '🚗',
-    accentColor: '#c2410c', accentColorSecondary: '#4a5568',
-    backgroundColor: '#f7f3ea', backgroundTexture: 'lines',
+    // Second reference theme, after Backpacking — tokens/covers/layouts authored below.
+    accentColor: '#1e5f45', accentColorSecondary: '#d9622b',
+    backgroundColor: '#f6f1e4', backgroundTexture: 'roadline',
     fontHeading: 'Montserrat', fontBody: 'Nunito',
-    stickers: ['arrow', 'compass', 'pin', 'camera', 'ticket'],
+    stickers: ['roadsign', 'mileage', 'arrow', 'pin', 'camera'],
     templates: ['transit', 'hike', 'city-walk'],
+    tokens: {
+      paper: '#f6f1e4',
+      surface: '#e9e1cd',
+      heading: '#1e3a5f',
+      body: '#33302a',
+      muted: '#7a7266',
+      accent: '#1e5f45',
+      accentSecondary: '#d9622b',
+      mustard: '#c98a1f',
+      fadedRed: '#a83232',
+      border: '#c98a1f',
+      mapRoute: '#1e5f45',
+      photoFrame: '#f6f1e4',
+      keepsakeBorder: '#4a4a4a',
+    },
+    covers: ROAD_TRIP_COVERS(),
+    layouts: ROAD_TRIP_LAYOUTS(),
   },
   {
     id: 'city-break', label: 'City Break', category: 'Occasion', icon: '🏙️',

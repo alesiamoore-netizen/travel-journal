@@ -17,6 +17,8 @@ export const STICKER_LIST = [
   { id: 'arrow',    label: 'Arrow'    },
   { id: 'wave',     label: 'Wave'     },
   { id: 'ticket',   label: 'Ticket'   },
+  { id: 'roadsign', label: 'Road Sign' },
+  { id: 'mileage',  label: 'Mile Marker' },
 ]
 
 function StickerSVG({ id, color }) {
@@ -175,6 +177,20 @@ function StickerSVG({ id, color }) {
         <text x="64" y="38" textAnchor="middle" fontSize="11" fontFamily="Georgia,serif" fill={c} fontWeight="bold" letterSpacing="2">ADMIT ONE</text>
         <text x="64" y="52" textAnchor="middle" fontSize="7" fontFamily="Georgia,serif" fill={c} fillOpacity="0.55" letterSpacing="1">TRAVEL MEMORIES</text>
         <text x="141" y="42" textAnchor="middle" fontSize="8" fontFamily="Georgia,serif" fill={c} fillOpacity="0.5" transform="rotate(-90,141,42)">✦ ✦ ✦</text>
+      </svg>
+    )
+    case 'roadsign': return (
+      <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,6 94,50 50,94 6,50" fill={c} fillOpacity="0.16" stroke={c} strokeWidth="3"/>
+        <line x1="26" y1="50" x2="74" y2="50" stroke={c} strokeWidth="4" strokeLinecap="round"/>
+        <line x1="50" y1="94" x2="50" y2="120" stroke={c} strokeWidth="3" strokeOpacity="0.5"/>
+      </svg>
+    )
+    case 'mileage': return (
+      <svg viewBox="0 0 70 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <rect x="28" y="46" width="6" height="46" fill={c} fillOpacity="0.5"/>
+        <rect x="4" y="6" width="54" height="42" rx="4" fill={c} fillOpacity="0.16" stroke={c} strokeWidth="2.5"/>
+        <text x="31" y="34" textAnchor="middle" fontSize="20" fontFamily="Georgia,serif" fill={c} fontWeight="bold">14</text>
       </svg>
     )
     default: return <svg viewBox="0 0 100 100" className="w-full h-full"><circle cx="50" cy="50" r="40" fill={c} fillOpacity="0.3"/></svg>

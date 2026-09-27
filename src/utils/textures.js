@@ -6,6 +6,7 @@ export const TEXTURES = [
   { id: 'linen', label: 'Linen' },
   { id: 'grain', label: 'Grain' },
   { id: 'topo',  label: 'Topo' },
+  { id: 'roadline', label: 'Road Line' },
 ]
 
 export function getTextureStyle(textureId) {
@@ -43,6 +44,14 @@ export function getTextureStyle(textureId) {
         ].join(', '),
         backgroundSize: '3px 3px, 7px 7px, 11px 11px',
         backgroundPosition: '0 0, 2px 4px, 5px 1px',
+      }
+    case 'roadline':
+      // Small elongated dash marks tiled in a grid (radial-gradient bounds in both axes,
+      // unlike linear-gradient) — evokes lane-marking dashes as a faint all-over paper
+      // texture, never a literal continuous line across the page.
+      return {
+        backgroundImage: 'radial-gradient(ellipse 7px 1.6px at 50% 50%, rgba(0,0,0,0.16), transparent 75%)',
+        backgroundSize: '22px 26px',
       }
     case 'topo':
       // Concentric-ring approximation of topographic contour lines.
