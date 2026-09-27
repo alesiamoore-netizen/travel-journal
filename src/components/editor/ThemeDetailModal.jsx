@@ -16,6 +16,7 @@ const DECORATION_LEVELS = ['minimal', 'standard', 'rich']
 const THEME_FALLBACK_PHOTOS = {
   backpacking: '/theme-previews/backpacking-trail.jpg',
   'road-trip': '/theme-previews/road-trip-highway.jpg',
+  'city-break': '/theme-previews/city-break-street.jpg',
 }
 // Real element renderers (DividerElement, KeepeakeElement, StickerElement) are pure/read-only
 // and safe to reuse directly for a genuine preview — they only fall back to the *live* notebook
