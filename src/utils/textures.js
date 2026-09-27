@@ -8,6 +8,7 @@ export const TEXTURES = [
   { id: 'topo',  label: 'Topo' },
   { id: 'roadline', label: 'Road Line' },
   { id: 'blueprint', label: 'Blueprint' },
+  { id: 'wave', label: 'Wave' },
 ]
 
 export function getTextureStyle(textureId) {
@@ -66,6 +67,15 @@ export function getTextureStyle(textureId) {
           'linear-gradient(90deg, rgba(30,58,95,0.18) 1px, transparent 1px)',
         ].join(', '),
         backgroundSize: '14px 14px, 14px 14px, 70px 70px, 70px 70px',
+      }
+    case 'wave':
+      // Tiled gentle sine-wave line — a small inline SVG data URI, unlike the pure-gradient
+      // textures above, because a true wave curve isn't expressible with linear/radial
+      // gradients alone. Tiled small and faint so it reads as a paper ripple, not a graphic.
+      return {
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath d='M0 10 Q10 2 20 10 T40 10' stroke='rgba(14,165,233,0.18)' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",
+        backgroundSize: '40px 20px',
       }
     case 'topo':
       // Concentric-ring approximation of topographic contour lines.

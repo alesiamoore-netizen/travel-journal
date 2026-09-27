@@ -21,6 +21,8 @@ export const STICKER_LIST = [
   { id: 'mileage',  label: 'Mile Marker' },
   { id: 'skyline',  label: 'Skyline' },
   { id: 'taxi',     label: 'Taxi' },
+  { id: 'palmtree', label: 'Palm Tree' },
+  { id: 'umbrella', label: 'Umbrella' },
 ]
 
 function StickerSVG({ id, color }) {
@@ -215,6 +217,27 @@ function StickerSVG({ id, color }) {
         <circle cx="74" cy="48" r="8" fill={c} fillOpacity="0.2" stroke={c} strokeWidth="2.5"/>
         <rect x="36" y="20" width="28" height="8" rx="1" fill={c} fillOpacity="0.18" stroke={c} strokeWidth="1.5"/>
         <text x="50" y="33" textAnchor="middle" fontSize="9" fontFamily="Georgia,serif" fill={c} fontWeight="bold" letterSpacing="1">TAXI</text>
+      </svg>
+    )
+    case 'palmtree': return (
+      <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M52 100 C50 70 48 50 46 38" fill="none" stroke={c} strokeWidth="4" strokeLinecap="round"/>
+        <path d="M46 38 C20 30 10 15 6 4 C24 8 40 18 46 38 Z" fill={c} fillOpacity="0.5" stroke={c} strokeWidth="1.5"/>
+        <path d="M46 38 C60 22 78 14 96 12 C86 26 68 36 46 38 Z" fill={c} fillOpacity="0.5" stroke={c} strokeWidth="1.5"/>
+        <path d="M46 38 C34 20 30 6 30 0 C42 8 48 22 46 38 Z" fill={c} fillOpacity="0.6" stroke={c} strokeWidth="1.5"/>
+        <path d="M46 38 C56 24 70 20 82 24 C72 34 58 38 46 38 Z" fill={c} fillOpacity="0.4" stroke={c} strokeWidth="1.5"/>
+        <ellipse cx="50" cy="98" rx="16" ry="2.5" fill={c} fillOpacity="0.3"/>
+      </svg>
+    )
+    case 'umbrella': return (
+      <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 42 L50 92" stroke={c} strokeWidth="2.5" strokeLinecap="round"/>
+        <path d="M50 92 Q56 96 50 98 Q44 96 50 92" fill="none" stroke={c} strokeWidth="2"/>
+        <path d="M6 42 C6 18 30 4 50 4 C70 4 94 18 94 42 Z" fill="none" stroke={c} strokeWidth="2.5"/>
+        <path d="M6 42 C16 36 24 36 34 42 C44 36 56 36 66 42 C76 36 84 36 94 42" fill="none" stroke={c} strokeWidth="2"/>
+        <path d="M50 4 L50 42" stroke={c} strokeWidth="1.5" strokeOpacity="0.6"/>
+        <path d="M18 42 C18 24 32 10 50 8" fill={c} fillOpacity="0.22" stroke="none"/>
+        <path d="M82 42 C82 24 68 10 50 8 L50 42 Z" fill={c} fillOpacity="0.35" stroke="none"/>
       </svg>
     )
     default: return <svg viewBox="0 0 100 100" className="w-full h-full"><circle cx="50" cy="50" r="40" fill={c} fillOpacity="0.3"/></svg>

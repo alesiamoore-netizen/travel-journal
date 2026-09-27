@@ -543,6 +543,185 @@ function CITY_BREAK_LAYOUTS() {
   ]
 }
 
+// ─── Beach Vacation content authoring ───────────────────────────────────
+
+// Photo treatment / `$photoFrame` token: same closed gap as Road Trip and City Break —
+// `captionColor` themed via `$photoFrame` on 3 authored image layouts. No new renderer field.
+
+const BH = 'Raleway'
+const BB = 'Nunito'
+
+function BEACH_COVERS() {
+  return [
+    {
+      id: 'bv-cover-shoreline', name: 'Shoreline', icon: '🏖️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${BH}, sans-serif`,
+          overlayColor: '#0ea5e960', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'wave', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 8, y: 1, w: 3, h: 3 }, data: { stickerId: 'palmtree', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bv-cover-palm-grove', name: 'Palm Grove', icon: '🌴', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'left', titleFont: `${BH}, sans-serif`,
+          overlayColor: '#2a9d7865', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 0, y: 8, w: 12, h: 1 }, data: { style: 'dotted', color: '$paper' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 9, y: 1, w: 2, h: 2 }, data: { stickerId: 'umbrella', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bv-cover-sunset-horizon', name: 'Sunset Horizon', icon: '🌅', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${BH}, sans-serif`,
+          overlayColor: '#ee6c4d55', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'sun', color: '$accentSecondary', rotation: 0, opacity: 0.95 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'wave', color: '$accentSecondary' }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
+function BEACH_LAYOUTS() {
+  return [
+    // ─── PHOTO ───────────────────────────────────────────────
+    {
+      id: 'bv-hero-beach', name: 'Hero Beach Photograph', icon: '🏖️', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover', caption: 'Toes in the sand', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Beach'), fontFamily: BH, fontSize: 28, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Beach · Date'), fontFamily: BB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'sun', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 1, y: 14, w: 10, h: 1 }, data: { style: 'wave', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bv-sand-shells-collage', name: 'Sand & Shells', icon: '🖼️', group: 'Photo',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Sand & Shells'), fontFamily: BH, fontSize: 26, color: '$heading' } },
+        { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 12 }, data: { columns: 2, gap: 6, borderRadius: 6 } },
+        { type: 'text', grid: { x: 1, y: 14, w: 10, h: 2 }, data: { textStyle: 'caption', content: doc('What washed up, what we kept…'), fontFamily: BB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+    {
+      id: 'bv-beachside-cafe', name: 'Beachside Café', icon: '🍹', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover', caption: 'Drink with an umbrella', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 9, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Beachside Café'), fontFamily: BH, fontSize: 24, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('What we ordered, the view, whether we’d go back…'), fontFamily: BB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 7, w: 3, h: 3 }, data: { stickerId: 'umbrella', color: '$accentSecondary', rotation: -8, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'wave', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bv-sunset', name: 'Sunset', icon: '🌅', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 10 }, data: { fit: 'cover' } },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Golden Hour'), fontFamily: BH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 4 }, data: { textStyle: 'body', content: doc('The sky, the colors, where we sat to watch it…'), fontFamily: BB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 8, w: 3, h: 3 }, data: { stickerId: 'sun', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'wave', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── WRITING ─────────────────────────────────────────────
+    {
+      id: 'bv-photo-writing', name: 'Photo + Story', icon: '📓', group: 'Writing',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1, caption: 'A slower kind of day', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('Beach Notes'), fontFamily: BH, fontSize: 22, color: '$heading' } },
+        { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('The sound of the waves, who we met, how slow the day felt…'), fontFamily: BB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'wave', color: '$accent', rotation: 10, opacity: 0.9 }, minDecorationLevel: 'standard' },
+      ],
+    },
+
+    // ─── MAP & ITINERARY ─────────────────────────────────────
+    {
+      id: 'bv-coastal-map', name: 'The Coast', icon: '🗺️', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Coast'), fontFamily: BH, fontSize: 26, color: '$heading' } },
+        { type: 'map', grid: { x: 0, y: 2, w: 12, h: 8 }, data: { tileStyle: 'minimal', mode: 'route', showRoute: true, showPins: true, routeColor: '$mapRoute', pinColor: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 2, w: 3, h: 3 }, data: { stickerId: 'pin', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 6 }, data: { textStyle: 'body', content: doc('The stretch of coast we covered, our favorite spot…'), fontFamily: BB, fontSize: 13, color: '$body' } },
+      ],
+    },
+    {
+      id: 'bv-itinerary', name: 'Day-by-Day Itinerary', icon: '🧭', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Beach Days'), fontFamily: BH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 1'), fontFamily: BB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Arrival, first swim, settling in…'), fontFamily: BB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 2'), fontFamily: BB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Snorkeling, a long lunch, doing nothing…'), fontFamily: BB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Day 3'), fontFamily: BB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('One last sunrise walk before leaving…'), fontFamily: BB, fontSize: 12, color: '$body' } },
+      ],
+    },
+    {
+      id: 'bv-boat-routes', name: 'Boat & Ferry Routes', icon: '⛴️', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Getting on the Water'), fontFamily: BH, fontSize: 26, color: '$heading' } },
+        { type: 'divider', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { style: 'wave', color: '$accentSecondary' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 3, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('Ferry times, the island we almost missed, the boat that rocked more than expected…'), fontFamily: BB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 9, y: 9, w: 3, h: 3 }, data: { stickerId: 'wave', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 2 }, data: { textStyle: 'caption', content: doc('Tickets below'), fontFamily: BB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+
+    // ─── KEEPSAKE ────────────────────────────────────────────
+    {
+      id: 'bv-excursion-keepsake', name: 'Snorkel & Excursion Keepsakes', icon: '🎫', group: 'Keepsake',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Excursions'), fontFamily: BH, fontSize: 26, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 0, y: 2, w: 6, h: 6 }, data: { label: 'Snorkel trip ticket', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' } },
+        { type: 'keepsake', grid: { x: 6, y: 2, w: 6, h: 6 }, data: { label: 'Ferry pass', hint: 'Tape or glue here', style: 'dashed', borderColor: '$keepsakeBorder' } },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 7 }, data: { textStyle: 'body', content: doc('What we saw underwater, what we’d do again…'), fontFamily: BB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 4, h: 2 }, data: { stickerId: 'star', color: '$accentSecondary', rotation: -3, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── OPENING & DIVIDERS ──────────────────────────────────
+    {
+      id: 'bv-trip-opening', name: 'Trip-Opening Spread', icon: '🏖️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 }, data: { style: 'wave', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 6, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Beach Vacation'), fontFamily: BH, fontSize: 34, color: '$heading' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Beach · Dates'), fontFamily: BB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 12, w: 8, h: 1 }, data: { style: 'wave', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'palmtree', color: '$accent', rotation: 0, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bv-cove-divider', name: 'Cove Divider', icon: '🏝️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 1, y: 5, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Cove Name'), fontFamily: BH, fontSize: 38, color: '$heading' } },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'wave', color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Exploring · Date'), fontFamily: BB, fontSize: 11, color: '$muted' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 2, h: 2 }, data: { stickerId: 'umbrella', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'bv-postcard-closing', name: 'Postcard & Reflections', icon: '💌', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Wish You Were Here'), fontFamily: BH, fontSize: 30, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 1, y: 3, w: 10, h: 5 }, data: { label: 'Postcard', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'wave', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 10, w: 10, h: 5 }, data: { textStyle: 'body', content: doc('What we’ll remember about this trip…'), fontFamily: BB, fontSize: 14, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 14, w: 2, h: 2 }, data: { stickerId: 'star', color: '$accentSecondary', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
 export const THEMES = [
   // ─── OCCASION ──────────────────────────────────────────────
   {
@@ -555,11 +734,29 @@ export const THEMES = [
   },
   {
     id: 'beach-vacation', label: 'Beach Vacation', category: 'Occasion', icon: '🏖️',
+    // Fourth reference theme, after Backpacking, Road Trip, and City Break.
     accentColor: '#0ea5e9', accentColorSecondary: '#f59e0b',
-    backgroundColor: '#fefce8', backgroundTexture: null,
+    backgroundColor: '#fdf6e3', backgroundTexture: 'wave',
     fontHeading: 'Raleway', fontBody: 'Nunito',
-    stickers: ['sun', 'wave', 'star', 'pin', 'camera'],
+    stickers: ['palmtree', 'umbrella', 'sun', 'wave', 'star', 'pin', 'camera'],
     templates: ['beach', 'sunset', 'hotel'],
+    tokens: {
+      paper: '#fdf6e3',
+      surface: '#f3e9d2',
+      heading: '#0c4a6e',
+      body: '#4a3728',
+      muted: '#a89684',
+      accent: '#0ea5e9',
+      accentSecondary: '#f59e0b',
+      coral: '#ee6c4d',
+      palmGreen: '#2a9d78',
+      border: '#5eb1bf',
+      mapRoute: '#5eb1bf',
+      photoFrame: '#fdf6e3',
+      keepsakeBorder: '#0c4a6e',
+    },
+    covers: BEACH_COVERS(),
+    layouts: BEACH_LAYOUTS(),
   },
   {
     id: 'road-trip', label: 'Road Trip', category: 'Occasion', icon: '🚗',
