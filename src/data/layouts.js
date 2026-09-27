@@ -5,7 +5,7 @@ export const LAYOUT_CATEGORIES = ['Basic', 'Editorial', 'Grid', 'Text', 'Maps', 
 // categories in the same Layouts picker.
 export const TEMPLATE_CATEGORIES = ['Day', 'Food', 'Nature', 'Transit', 'Lodging', 'City', 'Beach', 'Shopping', 'Museum', 'Diary']
 
-function doc(text) {
+export function doc(text) {
   return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] }
 }
 
@@ -989,28 +989,36 @@ export const DAILY_LAYOUTS = [
 // `$token` refs (resolved via resolveThemedElements against a synthetic per-month token
 // set, exactly like Backpacking's mechanism) drive the few decorative fields that should
 // track the month's seasonal palette — headings and dividers. Photo/body content stays literal.
+// The literal 'Month' heading text is substituted with the real month name (e.g. "January")
+// by buildMonthSpreadDocs at apply-time — see journalBuilders.js. A thick $accent-colored
+// divider bar directly under the heading, plus an $accentSecondary sticker stamped on the
+// photo corner, carry the seasonal palette as visible colored shapes, not just tinted text —
+// the same look-and-feel the background/texture change alone doesn't achieve on its own.
 export const MONTHLY_LAYOUTS = [
   {
     id: 'month-spread-left', name: 'Month Overview', icon: '🗓️', group: 'Monthly',
     elements: [
-      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Month'), fontFamily: 'Georgia', fontSize: 30, color: '$accent' } },
-      { type: 'image', grid: { x: 0, y: 2, w: 12, h: 8 } },
-      { type: 'text', grid: { x: 1, y: 10, w: 10, h: 6 }, data: { textStyle: 'body', content: doc('Highlights this month…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Month'), fontFamily: 'Georgia', fontSize: 34, color: '$accent' } },
+      { type: 'divider', grid: { x: 1, y: 2, w: 10, h: 1 }, data: { style: 'thick', color: '$accent' } },
+      { type: 'image', grid: { x: 0, y: 3, w: 12, h: 6 } },
+      { type: 'sticker', grid: { x: 9, y: 3, w: 3, h: 3 }, data: { stickerId: 'sun', color: '$accentSecondary', rotation: 10, opacity: 0.9 } },
+      { type: 'text', grid: { x: 1, y: 9, w: 10, h: 7 }, data: { textStyle: 'body', content: doc('Highlights this month…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
     ],
   },
   {
     id: 'month-spread-left-wide', name: 'Month Overview', icon: '🗓️', group: 'Monthly',
     elements: [
-      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'heading', content: doc('Month'), fontFamily: 'Georgia', fontSize: 22, color: '$accent' } },
-      { type: 'image', grid: { x: 0, y: 1, w: 12, h: 6 } },
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'heading', content: doc('Month'), fontFamily: 'Georgia', fontSize: 24, color: '$accent' } },
+      { type: 'divider', grid: { x: 1, y: 1, w: 10, h: 1 }, data: { style: 'thick', color: '$accent' } },
+      { type: 'image', grid: { x: 0, y: 2, w: 12, h: 5 } },
       { type: 'text', grid: { x: 1, y: 7, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Highlights this month…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
     ],
   },
   {
     id: 'month-spread-right', name: 'Notes & Memories', icon: '🗓️', group: 'Monthly',
     elements: [
-      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Notes & Memories'), fontFamily: 'Georgia', fontSize: 26, color: '#1a1a1a' } },
-      { type: 'divider', grid: { x: 1, y: 2, w: 10, h: 1 }, data: { style: 'line', color: '$accentSecondary' } },
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Notes & Memories'), fontFamily: 'Georgia', fontSize: 26, color: '$accentSecondary' } },
+      { type: 'divider', grid: { x: 1, y: 2, w: 10, h: 1 }, data: { style: 'thick', color: '$accentSecondary' } },
       { type: 'collage', grid: { x: 0, y: 3, w: 12, h: 7 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
       { type: 'text', grid: { x: 1, y: 10, w: 10, h: 6 }, data: { textStyle: 'body', content: doc('Favorite memory, place, reflection…'), fontFamily: 'Georgia', fontSize: 14, color: '#2c2c2c' } },
     ],
@@ -1018,8 +1026,8 @@ export const MONTHLY_LAYOUTS = [
   {
     id: 'month-spread-right-wide', name: 'Notes & Memories', icon: '🗓️', group: 'Monthly',
     elements: [
-      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'heading', content: doc('Notes & Memories'), fontFamily: 'Georgia', fontSize: 18, color: '#1a1a1a' } },
-      { type: 'divider', grid: { x: 1, y: 1, w: 10, h: 1 }, data: { style: 'line', color: '$accentSecondary' } },
+      { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'heading', content: doc('Notes & Memories'), fontFamily: 'Georgia', fontSize: 18, color: '$accentSecondary' } },
+      { type: 'divider', grid: { x: 1, y: 1, w: 10, h: 1 }, data: { style: 'thick', color: '$accentSecondary' } },
       { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 5 }, data: { columns: 2, gap: 5, borderRadius: 4 } },
       { type: 'text', grid: { x: 1, y: 7, w: 10, h: 3 }, data: { textStyle: 'body', content: doc('Favorite memory, place, reflection…'), fontFamily: 'Georgia', fontSize: 12, color: '#2c2c2c' } },
     ],
@@ -1032,8 +1040,10 @@ export const PHOTO_A_DAY_COVER_LAYOUT = {
   id: 'photo-a-day-cover', name: 'Photo-a-Day Cover', icon: '📖',
   elements: [
     { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
-      title: '', subtitle: '', titleAlign: 'center', titleFont: 'Georgia, serif',
+      // title stays '' so CoverElement falls back to the notebook's own name automatically.
+      title: '', subtitle: 'A Photo Every Day', titleAlign: 'center', titleFont: 'Georgia, serif',
       overlayColor: '#00000055', titleColor: '#ffffff', subtitleColor: '#ffffffcc',
     } },
+    { type: 'sticker', grid: { x: 9, y: 1, w: 3, h: 3 }, data: { stickerId: 'camera', color: '#ffffff', rotation: -8, opacity: 0.85 } },
   ],
 }

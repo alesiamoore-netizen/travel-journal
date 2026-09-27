@@ -82,7 +82,7 @@ function PageThumb({ elements, accent }) {
 }
 
 export default function Sidebar() {
-  const { pages, currentPageId, notebook, switchPage, addPage, insertPageAfter, deletePage, deleteDailyEntry, movePage, reorderPages, duplicatePage, addElement, elements, selectedId, updateElement, uid } = useEditorStore()
+  const { pages, currentPageId, notebook, switchPage, addPage, insertPageAfter, deletePage, deleteDailyEntry, deleteMonthSpread, movePage, reorderPages, duplicatePage, addElement, elements, selectedId, updateElement, uid } = useEditorStore()
   const { user } = useAuth()
   const [showLayouts, setShowLayouts] = useState(false)
   const [showTheme, setShowTheme] = useState(false)
@@ -99,6 +99,11 @@ export default function Sidebar() {
   const [presence, setPresence] = useState({}) // uid -> { displayName, photoURL, currentPageId }
   const accent = notebook?.theme?.accentColor ?? '#c0813a'
   const isPhotoADay = notebook?.journalKind === 'photo-a-day'
+  const isMonthlySpreads = notebook?.journalKind === 'monthly-spreads'
+  // Both dedicated journal kinds have a fixed page model — the generic move/insert/duplicate/
+  // per-page-delete controls are hidden for both, replaced with kind-specific actions that
+  // preserve the model's integrity (a daily entry, or a whole month pair, never one side of it).
+  const hideGenericPageControls = isPhotoADay || isMonthlySpreads
   const currentPage = pages.find(p => p.id === currentPageId)
   const isDailyEntryPage = currentPage?.pageKind === 'daily-entry'
   const isSpreadPage = currentPage?.pageKind === 'spread'
@@ -248,7 +253,7 @@ export default function Sidebar() {
             >
               🔍
             </button>
-            {!isPhotoADay && (
+            {!hideGenericPageControls && (
               <button
                 onClick={() => insertPageAfter(currentPageId)}
                 className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 text-lg leading-none flex-shrink-0"
@@ -300,12 +305,12 @@ export default function Sidebar() {
           return (
             <div
               key={page.id}
-              draggable={!isPhotoADay}
-              onDragStart={() => !isPhotoADay && setDragId(page.id)}
+              draggable={!hideGenericPageControls}
+              onDragStart={() => !hideGenericPageControls && setDragId(page.id)}
               onDragEnd={() => { setDragId(null); setDragOverId(null) }}
-              onDragOver={e => { if (isPhotoADay) return; e.preventDefault(); setDragOverId(page.id) }}
+              onDragOver={e => { if (hideGenericPageControls) return; e.preventDefault(); setDragOverId(page.id) }}
               onDrop={() => {
-                if (isPhotoADay || !dragId || dragId === page.id) return
+                if (hideGenericPageControls || !dragId || dragId === page.id) return
                 const src = pages.findIndex(p => p.id === dragId)
                 const dst = pages.findIndex(p => p.id === page.id)
                 const reordered = [...pages]
@@ -359,7 +364,7 @@ export default function Sidebar() {
                 )}
               </div>
               <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-px flex-shrink-0 transition-opacity">
-                {!isPhotoADay && (
+                {!hideGenericPageControls && (
                   <>
                     <button
                       className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-stone-600 text-[10px] leading-none"
@@ -394,6 +399,20 @@ export default function Sidebar() {
                         }
                       }}
                       title="Delete entry"
+                    >×</button>
+                  )
+                ) : isMonthlySpreads ? (
+                  page.spreadId && (
+                    <button
+                      className="w-4 h-3.5 flex items-center justify-center text-stone-300 hover:text-red-500 text-base leading-none"
+                      onClick={async e => {
+                        e.stopPropagation()
+                        if (window.confirm(`Permanently delete ${page.title || 'this month'}'s spread (both pages)? This can't be undone.`)) {
+                          const result = await deleteMonthSpread(page.spreadId)
+                          if (!result.ok) window.alert(result.error ?? 'Could not delete the month spread')
+                        }
+                      }}
+                      title="Delete month spread (both pages)"
                     >×</button>
                   )
                 ) : pages.length > 1 && (

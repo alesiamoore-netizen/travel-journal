@@ -38,11 +38,13 @@ function Drawer({ open, onClose, title, onBack, children }) {
 
 // ── Pages drawer ──────────────────────────────────────────────────────────────
 function PagesDrawer({ onClose }) {
-  const { pages, currentPageId, notebook, switchPage, insertPageAfter, deletePage, deleteDailyEntry, movePage, duplicatePage, updatePage } = useEditorStore()
+  const { pages, currentPageId, notebook, switchPage, insertPageAfter, deletePage, deleteDailyEntry, deleteMonthSpread, movePage, duplicatePage, updatePage } = useEditorStore()
   const [editingId, setEditingId] = useState(null)
   const editPage = pages.find(p => p.id === editingId)
   const upd = patch => updatePage(editingId, patch)
   const isPhotoADay = notebook?.journalKind === 'photo-a-day'
+  const isMonthlySpreads = notebook?.journalKind === 'monthly-spreads'
+  const hideGenericPageControls = isPhotoADay || isMonthlySpreads
 
   if (editingId) {
     return (
@@ -99,7 +101,7 @@ function PagesDrawer({ onClose }) {
             {/* Controls — Photo-a-Day journals only get edit + delete (daily entries only,
                 never the cover); the generic move/insert/duplicate UI is hidden there. */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              {!isPhotoADay && (
+              {!hideGenericPageControls && (
                 <>
                   <button onClick={() => movePage(p.id, -1)} disabled={i === 0}
                     className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200 disabled:opacity-20 text-sm">▲</button>
@@ -121,6 +123,15 @@ function PagesDrawer({ onClose }) {
                   <button onClick={() => { if (window.confirm("Permanently delete this day's entry? This can't be undone.")) deleteDailyEntry(p.id) }}
                     className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 text-lg leading-none">×</button>
                 )
+              ) : isMonthlySpreads ? (
+                p.spreadId && (
+                  <button onClick={async () => {
+                    if (!window.confirm(`Permanently delete ${p.title || 'this month'}'s spread (both pages)? This can't be undone.`)) return
+                    const result = await deleteMonthSpread(p.spreadId)
+                    if (!result.ok) window.alert(result.error ?? 'Could not delete the month spread')
+                  }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 text-lg leading-none">×</button>
+                )
               ) : pages.length > 1 && (
                 <button onClick={() => deletePage(p.id)}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 text-lg leading-none">×</button>
@@ -128,7 +139,7 @@ function PagesDrawer({ onClose }) {
             </div>
           </div>
         ))}
-        {!isPhotoADay && (
+        {!hideGenericPageControls && (
           <button onClick={() => { insertPageAfter(pages[pages.length - 1]?.id); onClose() }}
             className="w-full py-3 rounded-xl border-2 border-dashed border-stone-300 text-stone-500 text-sm font-medium hover:bg-stone-50">
             + Add page at end

@@ -40,12 +40,31 @@ export default function CoverElement({ element }) {
         <img src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
       ) : (
         <button
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white hover:brightness-95 transition-all"
-          style={{ background: `linear-gradient(160deg, ${emptyAccent}, ${emptyAccent}cc)` }}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white hover:brightness-105 transition-all px-8 text-center"
+          style={{
+            // Layered radial + linear gradient (not a flat single-tone block) so the empty
+            // cover reads as an intentional composition, not a placeholder rectangle.
+            background: `radial-gradient(circle at 32% 18%, ${emptyAccent}ee, transparent 62%), linear-gradient(160deg, ${emptyAccent}, ${emptyAccent}99)`,
+          }}
           onClick={e => { e.stopPropagation(); fileRef.current?.click() }}
         >
-          <span className="text-4xl drop-shadow">🌅</span>
-          <span className="text-xs font-medium drop-shadow">Click to add cover photo</span>
+          {title && (
+            <div
+              className="font-bold leading-tight"
+              style={{ fontSize: 'clamp(20px, 7%, 44px)', fontFamily: data.titleFont ?? 'Georgia, serif', textShadow: '0 2px 10px rgba(0,0,0,0.35)' }}
+            >
+              {title}
+            </div>
+          )}
+          {subtitle && (
+            <div className="text-sm font-medium opacity-90" style={{ fontFamily: data.titleFont ?? 'Georgia, serif', textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}>
+              {subtitle}
+            </div>
+          )}
+          <div className="mt-2 flex flex-col items-center gap-1.5 opacity-90">
+            <span className="text-3xl drop-shadow">🌅</span>
+            <span className="text-xs font-medium px-3 py-1.5 rounded-full border border-white/40 bg-white/10">Click to add cover photo</span>
+          </div>
         </button>
       )}
 

@@ -67,6 +67,18 @@ export async function fsDeletePage(uid, pageId) {
   await batch.commit()
 }
 
+// Deletes several pages (and all of their elements) in one atomic batch — used to delete a
+// Monthly Spreads pair as a single unit, never one side independently.
+export async function fsDeletePages(uid, pageIds) {
+  const batch = writeBatch(firestoreDb)
+  for (const pageId of pageIds) {
+    const elements = await getDocs(query(userCol(uid, 'elements'), where('pageId', '==', pageId)))
+    elements.docs.forEach(d => batch.delete(d.ref))
+    batch.delete(userDoc(uid, 'pages', pageId))
+  }
+  await batch.commit()
+}
+
 export async function fsUpdatePageOrders(uid, pages) {
   const batch = writeBatch(firestoreDb)
   pages.forEach(p => batch.update(userDoc(uid, 'pages', p.id), { order: p.order }))

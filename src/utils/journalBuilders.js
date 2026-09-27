@@ -3,7 +3,7 @@
 // Photo-a-Day/Monthly-Spreads creation paths and the ordinary applyLayout path build element
 // documents identically, instead of maintaining two copies of the same merge logic.
 import { resolveThemedElements } from '../data/themes'
-import { MONTHLY_LAYOUTS, PHOTO_A_DAY_COVER_LAYOUT } from '../data/layouts'
+import { MONTHLY_LAYOUTS, PHOTO_A_DAY_COVER_LAYOUT, doc } from '../data/layouts'
 import { MONTHLY_STYLES, monthTokensToOverrides } from '../data/monthlyThemes'
 
 export function defaultData(type) {
@@ -180,6 +180,10 @@ export function buildMonthSpreadDocs(notebookId, monthIndex, year, { baseOrder, 
   const leftResolved = resolveThemedElements(leftDef.elements, syntheticTheme, leftDef.id, 'standard')
   const rightResolved = resolveThemedElements(rightDef.elements, syntheticTheme, rightDef.id, 'standard')
   const leftElements = buildElementDocs(leftPageId, notebookId, { elements: leftResolved })
+    // The layout's heading placeholder text is the literal word "Month" — substitute the
+    // real month name (matching page.title, which PageHeader already shows) so the on-canvas
+    // heading isn't left saying something generic.
+    .map(el => el.data?.textStyle === 'heading' ? { ...el, data: { ...el.data, content: doc(style.label) } } : el)
   const rightElements = buildElementDocs(rightPageId, notebookId, { elements: rightResolved })
 
   const leftPage = {

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { loadFont } from '../utils/fonts'
 import {
-  fsLoadNotebooks, fsLoadPages, fsLoadElements, fsSavePage, fsUpdatePage, fsDeletePage,
+  fsLoadNotebooks, fsLoadPages, fsLoadElements, fsSavePage, fsUpdatePage, fsDeletePage, fsDeletePages,
   fsSaveElement, fsUpdateElement, fsDeleteElement, fsReplacePageElements,
   fsUpdatePageOrders, fsUpdateNotebook, fsLoadNotebookElements, fsBatchUpdateElements,
   fsApplyMonthStyle, fsInsertMonthSpread, fsCreateDailyEntryIfAbsent,
@@ -599,6 +599,45 @@ export const useEditorStore = create((set, get) => ({
     }
     const cid = collabId()
     if (cid) fsCollabDeletePage(cid, pageId).catch(console.warn)
+    return { ok: true }
+  },
+
+  // Deletes an entire Monthly Spreads month pair (both pages + all their elements) as one
+  // atomic operation — never one side independently, which would strand the other page as an
+  // unpaired spread. Navigates to the nearest remaining spread's left page, or the journal's
+  // first remaining page if none are left. Order is otherwise untouched (Monthly Spreads pages
+  // are never renumbered — deleting a pair simply removes two entries from the list).
+  deleteMonthSpread: async (spreadId) => {
+    const { uid, pages, currentPageId } = get()
+    if (!uid) return { ok: false }
+    // Same rigor as resolveSpreadPairing/setMonthStyle — exactly one 'left' and one 'right',
+    // not merely "some pages share this id." Refuses (deletes nothing) on a malformed pair,
+    // rather than deleting whatever happens to match and potentially leaving a stray page
+    // behind, or deleting a single unpaired page under the "whole pair" label.
+    const spreadPages = pages.filter(p => p.spreadId === spreadId)
+    const leftCount = spreadPages.filter(p => p.spreadSide === 'left').length
+    const rightCount = spreadPages.filter(p => p.spreadSide === 'right').length
+    if (!(spreadPages.length === 2 && leftCount === 1 && rightCount === 1)) {
+      return { ok: false, error: 'This spread is missing its partner page or has duplicate/corrupt metadata — nothing was deleted.' }
+    }
+    const pageIds = spreadPages.map(p => p.id)
+
+    try {
+      await fsDeletePages(uid, pageIds)
+    } catch (error) {
+      // fsDeletePages is one atomic batch — a rejection leaves both pages (and their
+      // elements) fully intact, never one side deleted and the other not.
+      return { ok: false, error: error?.message ?? 'Could not delete the month spread' }
+    }
+    const remaining = pages.filter(p => !pageIds.includes(p.id))
+    set({ pages: remaining })
+
+    if (pageIds.includes(currentPageId)) {
+      const next = remaining.find(p => p.spreadSide === 'left') ?? remaining[0]
+      if (next) await get().switchPage(next.id)
+    }
+    const cid = collabId()
+    if (cid) pageIds.forEach(id => fsCollabDeletePage(cid, id).catch(console.warn))
     return { ok: true }
   },
 
