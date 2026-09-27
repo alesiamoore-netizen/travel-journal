@@ -25,6 +25,8 @@ export const STICKER_LIST = [
   { id: 'umbrella', label: 'Umbrella' },
   { id: 'snowflake', label: 'Snowflake' },
   { id: 'mountain', label: 'Mountain' },
+  { id: 'ornament', label: 'Ornament' },
+  { id: 'gift',     label: 'Gift' },
 ]
 
 function StickerSVG({ id, color }) {
@@ -262,6 +264,28 @@ function StickerSVG({ id, color }) {
         <path d="M34 18 L26 32 L34 30 L40 38 L48 38 Z" fill={c} fillOpacity="0.9"/>
         <path d="M60 22 L53 33 L60 31 L66 38 L74 38 L60 22 Z" fill={c} fillOpacity="0.9"/>
         <line x1="2" y1="66" x2="98" y2="66" stroke={c} strokeWidth="2" strokeOpacity="0.6"/>
+      </svg>
+    )
+    case 'ornament': return (
+      <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <rect x="44" y="6" width="12" height="8" rx="2" fill="none" stroke={c} strokeWidth="2"/>
+        <path d="M46 14 Q50 20 54 14" fill="none" stroke={c} strokeWidth="1.5"/>
+        <circle cx="50" cy="58" r="34" fill={c} fillOpacity="0.22" stroke={c} strokeWidth="2.5"/>
+        <path d="M50 24 L50 92" stroke={c} strokeWidth="1" strokeOpacity="0.3"/>
+        <path d="M22 58 Q50 46 78 58" fill="none" stroke={c} strokeWidth="1" strokeOpacity="0.35"/>
+        <circle cx="50" cy="58" r="9" fill={c} fillOpacity="0.5"/>
+        <circle cx="40" cy="48" r="3" fill="white" fillOpacity="0.55"/>
+      </svg>
+    )
+    case 'gift': return (
+      <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <rect x="12" y="42" width="76" height="50" rx="2" fill="none" stroke={c} strokeWidth="2.5"/>
+        <rect x="12" y="42" width="76" height="14" fill={c} fillOpacity="0.18"/>
+        <rect x="44" y="42" width="12" height="50" fill={c} fillOpacity="0.3"/>
+        <rect x="12" y="60" width="76" height="6" fill={c} fillOpacity="0.3"/>
+        <path d="M50 42 C38 26 26 24 22 30 C18 37 30 42 50 42 Z" fill="none" stroke={c} strokeWidth="2"/>
+        <path d="M50 42 C62 26 74 24 78 30 C82 37 70 42 50 42 Z" fill="none" stroke={c} strokeWidth="2"/>
+        <circle cx="50" cy="40" r="4" fill={c} fillOpacity="0.6"/>
       </svg>
     )
     default: return <svg viewBox="0 0 100 100" className="w-full h-full"><circle cx="50" cy="50" r="40" fill={c} fillOpacity="0.3"/></svg>

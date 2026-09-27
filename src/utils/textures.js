@@ -10,6 +10,7 @@ export const TEXTURES = [
   { id: 'blueprint', label: 'Blueprint' },
   { id: 'wave', label: 'Wave' },
   { id: 'snowfall', label: 'Snowfall' },
+  { id: 'tartan', label: 'Tartan' },
 ]
 
 export function getTextureStyle(textureId) {
@@ -90,6 +91,20 @@ export function getTextureStyle(textureId) {
         ].join(', '),
         backgroundSize: '18px 22px, 26px 30px, 42px 46px',
         backgroundPosition: '0 0, 9px 14px, 22px 6px',
+      }
+    case 'tartan':
+      // Subtle plaid — thin evergreen hairlines crossed with thin cranberry hairlines at a
+      // slightly larger, offset scale, both very low-opacity — reads as a soft holiday-card
+      // plaid on cream paper, never a bold/loud tartan print.
+      return {
+        backgroundImage: [
+          'linear-gradient(rgba(45,106,79,0.09) 1px, transparent 1px)',
+          'linear-gradient(90deg, rgba(45,106,79,0.09) 1px, transparent 1px)',
+          'linear-gradient(rgba(179,39,61,0.07) 1px, transparent 1px)',
+          'linear-gradient(90deg, rgba(179,39,61,0.07) 1px, transparent 1px)',
+        ].join(', '),
+        backgroundSize: '16px 16px, 16px 16px, 48px 48px, 48px 48px',
+        backgroundPosition: '0 0, 0 0, 8px 8px, 8px 8px',
       }
     case 'topo':
       // Concentric-ring approximation of topographic contour lines.

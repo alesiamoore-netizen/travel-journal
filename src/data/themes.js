@@ -901,15 +901,207 @@ function WINTER_LAYOUTS() {
   ]
 }
 
+const XH = 'Playfair Display'
+const XB = 'Lora'
+
+function CHRISTMAS_COVERS() {
+  return [
+    {
+      id: 'xm-cover-classic', name: 'Classic Christmas', icon: '🎄', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${XH}, serif`,
+          overlayColor: '#4a152670', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'ornate', color: '$gold' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 8, y: 1, w: 3, h: 3 }, data: { stickerId: 'wreath', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'xm-cover-village', name: 'Snowy Christmas Village', icon: '🏘️', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'left', titleFont: `${XH}, serif`,
+          overlayColor: '#1a274465', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'divider', grid: { x: 0, y: 8, w: 12, h: 1 }, data: { style: 'dotted', color: '$paper' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 9, y: 1, w: 2, h: 2 }, data: { stickerId: 'snowflake', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'xm-cover-lights', name: 'Holiday Lights', icon: '✨', group: 'Covers',
+      elements: [
+        { type: 'cover', grid: { x: 0, y: 0, w: 12, h: 16 }, data: {
+          title: '', subtitle: '', titleAlign: 'center', titleFont: `${XH}, serif`,
+          overlayColor: '#c9a22755', titleColor: '$paper', subtitleColor: '$paper',
+        } },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'star', color: '$gold', rotation: 0, opacity: 0.95 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 13, w: 8, h: 1 }, data: { style: 'double', color: '$accentSecondary' }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
+function CHRISTMAS_LAYOUTS() {
+  return [
+    // ─── PHOTO ───────────────────────────────────────────────
+    {
+      id: 'xm-hero-christmas', name: 'Hero Christmas Photograph', icon: '🎄', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 11 }, data: { fit: 'cover', caption: 'Christmas morning', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('The Tree'), fontFamily: XH, fontSize: 28, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 13, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Home · Date'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 0, w: 3, h: 3 }, data: { stickerId: 'ornament', color: '$paper', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 1, y: 14, w: 10, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'xm-christmas-day', name: 'Christmas Day Memories', icon: '🎁', group: 'Photo',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 12, h: 9 }, data: { fit: 'cover', caption: 'Unwrapping', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 0, y: 9, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Christmas Day'), fontFamily: XH, fontSize: 24, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 11, w: 12, h: 5 }, data: { textStyle: 'body', content: doc('Who got what, best reaction, what we ate…'), fontFamily: XB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 0, y: 7, w: 3, h: 3 }, data: { stickerId: 'gift', color: '$accentSecondary', rotation: -6, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 0, y: 14, w: 12, h: 1 }, data: { style: 'dotted', color: '$border' }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'xm-holiday-collage', name: 'Four-Photo Holiday Collage', icon: '🖼️', group: 'Photo',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Holiday Moments'), fontFamily: XH, fontSize: 26, color: '$heading' } },
+        { type: 'collage', grid: { x: 0, y: 2, w: 12, h: 12 }, data: { columns: 2, gap: 6, borderRadius: 4 } },
+        { type: 'text', grid: { x: 1, y: 14, w: 10, h: 2 }, data: { textStyle: 'caption', content: doc('A few scenes from the season…'), fontFamily: XB, fontSize: 10, color: '$muted' } },
+      ],
+    },
+
+    // ─── WRITING ─────────────────────────────────────────────
+    {
+      id: 'xm-christmas-eve', name: 'Christmas Eve Story', icon: '🕯️', group: 'Writing',
+      elements: [
+        { type: 'image', grid: { x: 0, y: 0, w: 6, h: 16 }, data: { fit: 'cover', rotation: -1, caption: 'Christmas Eve', captionStyle: 'overlay', captionColor: '$photoFrame' } },
+        { type: 'text', grid: { x: 7, y: 0, w: 5, h: 2 }, data: { textStyle: 'heading', content: doc('Christmas Eve'), fontFamily: XH, fontSize: 22, color: '$heading' } },
+        { type: 'text', grid: { x: 7, y: 2, w: 5, h: 12 }, data: { textStyle: 'body', content: doc('The traditions, the anticipation, who couldn’t sleep…'), fontFamily: XB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 7, y: 14, w: 2, h: 2 }, data: { stickerId: 'star', color: '$gold', rotation: 10, opacity: 0.9 }, minDecorationLevel: 'standard' },
+      ],
+    },
+    {
+      id: 'xm-family-traditions', name: 'Family Traditions', icon: '👪', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Our Traditions'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Family Traditions'), fontFamily: XH, fontSize: 26, color: '$heading' } },
+        { type: 'divider', grid: { x: 0, y: 3, w: 12, h: 1 }, data: { style: 'ornate', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 4, w: 12, h: 12 }, data: { textStyle: 'body', content: doc('What we always do, who started it, what’s new this year…'), fontFamily: XB, fontSize: 14, color: '$body' } },
+      ],
+    },
+    {
+      id: 'xm-holiday-recipe', name: 'Holiday Recipe', icon: '🍪', group: 'Writing',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Holiday Recipe'), fontFamily: XH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Serves 8 · Prep 20 min'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 0, y: 4, w: 5, h: 6 }, data: { textStyle: 'body', content: doc('Ingredients:\n— \n— \n— '), fontFamily: XB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 5, y: 4, w: 1, h: 10 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 6, y: 4, w: 6, h: 10 }, data: { textStyle: 'body', content: doc('Instructions, family notes, who this recipe came from…'), fontFamily: XB, fontSize: 12, color: '$body' } },
+      ],
+    },
+
+    // ─── MAP & ITINERARY ─────────────────────────────────────
+    {
+      id: 'xm-december-itinerary', name: 'December Events Itinerary', icon: '📅', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('December Events'), fontFamily: XH, fontSize: 26, color: '$heading' } },
+        { type: 'text', grid: { x: 0, y: 2, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Week 1'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 3, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Tree shopping, first cocoa of the season…'), fontFamily: XB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 6, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 7, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Week 2'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 8, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Cookie baking, cards mailed, lights up…'), fontFamily: XB, fontSize: 12, color: '$body' } },
+        { type: 'divider', grid: { x: 0, y: 11, w: 12, h: 1 }, data: { style: 'line', color: '$border' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 12, w: 12, h: 1 }, data: { textStyle: 'dateline', content: doc('Week 3'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 1, y: 13, w: 11, h: 3 }, data: { textStyle: 'body', content: doc('Family arrives, last-minute wrapping…'), fontFamily: XB, fontSize: 12, color: '$body' } },
+      ],
+    },
+    {
+      id: 'xm-lights-route', name: 'Holiday Lights Route', icon: '🚗', group: 'Map & Itinerary',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Holiday Lights Route'), fontFamily: XH, fontSize: 26, color: '$heading' } },
+        { type: 'map', grid: { x: 0, y: 2, w: 12, h: 8 }, data: { tileStyle: 'minimal', mode: 'pin', showPins: true, pinColor: '$accentSecondary' } },
+        { type: 'sticker', grid: { x: 9, y: 2, w: 3, h: 3 }, data: { stickerId: 'star', color: '$gold', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 0, y: 10, w: 12, h: 6 }, data: { textStyle: 'body', content: doc('Best displays, hot cocoa stop, favorite house on the block…'), fontFamily: XB, fontSize: 13, color: '$body' } },
+      ],
+    },
+
+    // ─── KEEPSAKE ────────────────────────────────────────────
+    {
+      id: 'xm-cards-tags-keepsake', name: 'Cards, Tags & Ribbons', icon: '🎀', group: 'Keepsake',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 0, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Cards & Tags'), fontFamily: XH, fontSize: 26, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 0, y: 2, w: 6, h: 6 }, data: { label: 'Holiday card', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' } },
+        { type: 'keepsake', grid: { x: 6, y: 2, w: 6, h: 6 }, data: { label: 'Gift tag', hint: 'Tape or glue here', style: 'dashed', borderColor: '$keepsakeBorder' } },
+        { type: 'text', grid: { x: 0, y: 8, w: 12, h: 7 }, data: { textStyle: 'body', content: doc('Who sent what, favorite card this year…'), fontFamily: XB, fontSize: 13, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 4, h: 2 }, data: { stickerId: 'gift', color: '$accentSecondary', rotation: -3, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+
+    // ─── OPENING & DIVIDERS ──────────────────────────────────
+    {
+      id: 'xm-trip-opening', name: 'Christmas-Trip Opening Spread', icon: '🎄', group: 'Opening & Dividers',
+      elements: [
+        { type: 'divider', grid: { x: 2, y: 5, w: 8, h: 1 }, data: { style: 'ornate', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 6, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Christmas'), fontFamily: XH, fontSize: 34, color: '$heading' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('Home · Year'), fontFamily: XB, fontSize: 11, color: '$accentSecondary' } },
+        { type: 'divider', grid: { x: 2, y: 12, w: 8, h: 1 }, data: { style: 'ornate', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'sticker', grid: { x: 5, y: 2, w: 2, h: 2 }, data: { stickerId: 'wreath', color: '$accent', rotation: 0, opacity: 0.85 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'xm-chapter-divider', name: 'Chapter Divider', icon: '🔔', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 1, y: 5, w: 10, h: 4 }, data: { textStyle: 'heading', content: doc('Chapter'), fontFamily: XH, fontSize: 38, color: '$heading' } },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'double', color: '$accentSecondary' } },
+        { type: 'text', grid: { x: 2, y: 10, w: 8, h: 2 }, data: { textStyle: 'dateline', content: doc('This Week · Date'), fontFamily: XB, fontSize: 11, color: '$muted' } },
+        { type: 'sticker', grid: { x: 5, y: 1, w: 2, h: 2 }, data: { stickerId: 'ornament', color: '$accent', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+    {
+      id: 'xm-year-end-reflections', name: 'Year-End Reflections', icon: '🕊️', group: 'Opening & Dividers',
+      elements: [
+        { type: 'text', grid: { x: 0, y: 1, w: 12, h: 2 }, data: { textStyle: 'heading', content: doc('Year-End Reflections'), fontFamily: XH, fontSize: 30, color: '$heading' } },
+        { type: 'keepsake', grid: { x: 1, y: 3, w: 10, h: 5 }, data: { label: 'Postcard', hint: 'Tape or glue here', style: 'pocket', borderColor: '$keepsakeBorder' }, minDecorationLevel: 'standard' },
+        { type: 'divider', grid: { x: 2, y: 9, w: 8, h: 1 }, data: { style: 'double', color: '$accent' }, minDecorationLevel: 'standard' },
+        { type: 'text', grid: { x: 1, y: 10, w: 10, h: 5 }, data: { textStyle: 'body', content: doc('What we’ll remember about this year…'), fontFamily: XB, fontSize: 14, color: '$body' } },
+        { type: 'sticker', grid: { x: 5, y: 14, w: 2, h: 2 }, data: { stickerId: 'star', color: '$gold', rotation: 0, opacity: 0.9 }, minDecorationLevel: 'rich' },
+      ],
+    },
+  ]
+}
+
 export const THEMES = [
   // ─── OCCASION ──────────────────────────────────────────────
   {
     id: 'christmas', label: 'Christmas', category: 'Occasion', icon: '🎄',
-    accentColor: '#b91c1c', accentColorSecondary: '#15803d',
-    backgroundColor: '#fdf6ec', backgroundTexture: 'linen',
-    fontHeading: 'Merriweather', fontBody: 'Lora',
-    stickers: ['wreath', 'star', 'banner', 'heart', 'frame'],
+    // Sixth reference theme, after Backpacking, Road Trip, City Break, Beach Vacation, and
+    // Winter Getaway — the last of the initial reference-quality pass.
+    accentColor: '#2d6a4f', accentColorSecondary: '#b3273d',
+    backgroundColor: '#fdf6ec', backgroundTexture: 'tartan',
+    fontHeading: 'Playfair Display', fontBody: 'Lora',
+    stickers: ['wreath', 'ornament', 'gift', 'star', 'banner', 'snowflake', 'frame'],
     templates: ['gratitude', 'day', 'hotel'],
+    tokens: {
+      paper: '#fdf6ec',
+      surface: '#f5ead8',
+      heading: '#4a1526',
+      body: '#3a2e26',
+      muted: '#a08e78',
+      accent: '#2d6a4f',
+      accentSecondary: '#b3273d',
+      gold: '#c9a227',
+      navy: '#1a2744',
+      border: '#8b6f47',
+      mapRoute: '#2d6a4f',
+      photoFrame: '#fdf6ec',
+      keepsakeBorder: '#4a1526',
+    },
+    covers: CHRISTMAS_COVERS(),
+    layouts: CHRISTMAS_LAYOUTS(),
   },
   {
     id: 'beach-vacation', label: 'Beach Vacation', category: 'Occasion', icon: '🏖️',
