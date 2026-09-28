@@ -19,6 +19,7 @@ const THEME_FALLBACK_PHOTOS = {
   'city-break': '/theme-previews/city-break-street.jpg',
   'beach-vacation': '/theme-previews/beach-vacation-shore.jpg',
   'winter-getaway': '/theme-previews/winter-getaway-valloire.jpg',
+  christmas: '/theme-previews/christmas-ornaments.jpg',
 }
 // Real element renderers (DividerElement, KeepeakeElement, StickerElement) are pure/read-only
 // and safe to reuse directly for a genuine preview — they only fall back to the *live* notebook
