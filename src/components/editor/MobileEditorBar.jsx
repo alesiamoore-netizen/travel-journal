@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { useAuth } from '../../context/AuthContext'
 import { uploadPhoto } from '../../firebase/storageHelpers'
-import { fsSavePhoto, fsLoadPhotos } from '../../firebase/firestoreHelpers'
+import { fsSavePhoto, fsLoadPhotos, fsLoadAllPhotos } from '../../firebase/firestoreHelpers'
 import { STICKER_LIST } from './elements/StickerElement'
 import { TEXT_STYLES, applyTextStyle } from '../../data/textStyles'
 import { LAYOUTS, LAYOUT_CATEGORIES } from '../../data/layouts'
@@ -292,16 +292,32 @@ function StickerPickerDrawer({ onClose }) {
 }
 
 // ── Photo library picker ──────────────────────────────────────────────────────
+// `scope` toggles between this journal's own photos and the owner's whole cross-journal
+// library (fsLoadAllPhotos — already excludes trashed photos). Picking a photo reuses
+// its existing {photoId, storageUrl, thumbnailUrl} — never re-uploads it.
 function PhotoLibraryDrawer({ onClose }) {
   const { notebook, addElement, updateElement } = useEditorStore()
   const { user } = useAuth()
+  const [scope, setScope] = useState('journal') // 'journal' | 'all'
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [retryTick, setRetryTick] = useState(0)
 
   useEffect(() => {
     if (!user || !notebook) return
-    fsLoadPhotos(user.uid, notebook.id).then(ps => { setPhotos(ps ?? []); setLoading(false) })
-  }, [user, notebook])
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    const load = scope === 'all' ? fsLoadAllPhotos(user.uid) : fsLoadPhotos(user.uid, notebook.id)
+    load.then(ps => { if (!cancelled) setPhotos(ps ?? []) })
+      .catch(err => {
+        console.error('[PhotoLibraryDrawer] failed to load photos:', err)
+        if (!cancelled) setError('Could not load photos.')
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [user, notebook, scope, retryTick])
 
   const pick = async (photo) => {
     onClose()
@@ -311,11 +327,29 @@ function PhotoLibraryDrawer({ onClose }) {
 
   return (
     <Drawer open title="Photo Library" onClose={onClose}>
+      <div className="flex gap-1.5 text-xs px-3 pt-2">
+        {[['journal', 'This journal'], ['all', 'All my photos']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setScope(key)}
+            className={`px-2.5 py-1 rounded-full border transition-colors ${
+              scope === key ? 'border-amber-600 bg-amber-50 text-amber-800' : 'border-stone-200 text-stone-400'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {loading ? (
         <div className="p-8 text-center text-stone-400 text-sm">Loading…</div>
+      ) : error ? (
+        <div className="p-8 text-center text-sm">
+          <p className="text-red-600 mb-2">{error}</p>
+          <button onClick={() => setRetryTick(t => t + 1)} className="text-amber-800 underline">Retry</button>
+        </div>
       ) : photos.length === 0 ? (
         <div className="p-8 text-center text-stone-400 text-sm leading-relaxed">
-          No photos in this journal yet.<br />Upload photos using camera or gallery first.
+          {scope === 'all' ? 'No photos yet.' : <>No photos in this journal yet.<br />Upload photos using camera or gallery first.</>}
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-1 p-3">

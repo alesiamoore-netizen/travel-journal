@@ -3,6 +3,7 @@ import {
   query, where, orderBy, writeBatch, serverTimestamp, runTransaction,
 } from 'firebase/firestore'
 import { firestoreDb } from './config'
+import { isActivePhoto, groupPhotosByStatus, matchesPhotoReference, isPhotoBearingType, placementKey } from '../utils/photoLibrary'
 
 // ── Path helpers ──────────────────────────────────────────────────────────────
 
@@ -28,6 +29,10 @@ export async function fsUpdateNotebook(uid, id, patch) {
   await updateDoc(userDoc(uid, 'notebooks', id), { ...patch, updatedAt: new Date().toISOString() })
 }
 
+// Photos are a reusable, owner-level library (see fsLoadAllPhotos below) — deleting a
+// journal must never delete a photo document. Every other deletion behavior here is
+// unchanged; mirror (journals/{id}) and public-share (public_notebooks/{id}) cleanup
+// are a separate, pre-existing gap, intentionally not addressed by this fix.
 export async function fsDeleteNotebook(uid, notebookId) {
   const batch = writeBatch(firestoreDb)
 
@@ -36,9 +41,6 @@ export async function fsDeleteNotebook(uid, notebookId) {
 
   const elements = await getDocs(query(userCol(uid, 'elements'), where('notebookId', '==', notebookId)))
   elements.docs.forEach(d => batch.delete(d.ref))
-
-  const photos = await getDocs(query(userCol(uid, 'photos'), where('notebookId', '==', notebookId)))
-  photos.docs.forEach(d => batch.delete(d.ref))
 
   batch.delete(userDoc(uid, 'notebooks', notebookId))
   await batch.commit()
@@ -226,15 +228,156 @@ export async function fsCreateDailyEntryIfAbsent(uid, dateStr, pageDoc, elementD
   })
 }
 
-// ── Photos ────────────────────────────────────────────────────────────────────
+// ── Photos — owner-level reusable library (trash/restore MVP) ────────────────
+//
+// Photo documents already live at users/{uid}/photos/{id} — scoped by the uploading
+// user's own uid, never by journal. `notebookId` on a photo doc is informational only
+// (the journal it was originally uploaded from); it is never read by any access or
+// visibility decision. A photo's lifecycle is governed only by its own `status` field.
+//
+// IMPORTANT — collaborator-upload limitation: fsLoadPhotos/fsSavePhoto are always
+// called with the CURRENTLY AUTHENTICATED user's own uid (see every call site in
+// Sidebar.jsx, MobileEditorBar.jsx, Inspector.jsx, ImageElement.jsx, CoverElement.jsx,
+// CollageElement.jsx). A distinct collaborator account uploads into THEIR OWN
+// users/{collaboratorUid}/photos — a completely separate collection this trash/
+// restore system has no visibility into or effect on. This release governs only
+// photos uploaded under the owner's own account.
+
+// Re-exported for existing importers — the actual logic now lives in the Firebase-free
+// utility module so it can be imported directly by both this file and plain Node tests.
+export { isActivePhoto }
 
 export async function fsLoadPhotos(uid, notebookId) {
   const snap = await getDocs(query(userCol(uid, 'photos'), where('notebookId', '==', notebookId)))
-  return snap.docs.map(d => d.data()).sort((a, b) => (b.uploadedAt ?? '').localeCompare(a.uploadedAt ?? ''))
+  return snap.docs.map(d => d.data())
+    .filter(isActivePhoto)
+    .sort((a, b) => (b.uploadedAt ?? '').localeCompare(a.uploadedAt ?? ''))
 }
 
+// Cross-journal browse — every active photo the owner has ever uploaded, regardless
+// of which journal it was originally added from. No `where` filter: this is the one
+// query that makes "reuse a photo across journals" possible at all.
+export async function fsLoadAllPhotos(uid) {
+  const snap = await getDocs(userCol(uid, 'photos'))
+  return snap.docs.map(d => d.data())
+    .filter(isActivePhoto)
+    .sort((a, b) => (b.uploadedAt ?? '').localeCompare(a.uploadedAt ?? ''))
+}
+
+// ONE read of the owner's whole photos collection, split into {active, trashed} — the
+// Photo Library page's only data source. Replaces the earlier version's two separate,
+// simultaneous reads of the same collection (fsLoadAllPhotos plus a direct getDocs).
+export async function fsLoadPhotoLibrary(uid) {
+  const snap = await getDocs(userCol(uid, 'photos'))
+  const all = snap.docs.map(d => d.data())
+    .sort((a, b) => (b.uploadedAt ?? '').localeCompare(a.uploadedAt ?? ''))
+  return groupPhotosByStatus(all)
+}
+
+// Every new upload is stamped with the fields this release's lifecycle depends on.
+// Never touches an existing document — every call site generates a brand-new photoId.
 export async function fsSavePhoto(uid, photo) {
-  await setDoc(userDoc(uid, 'photos', photo.id), photo)
+  await setDoc(userDoc(uid, 'photos', photo.id), {
+    ...photo,
+    status: 'active',
+    trashedAt: null,
+    uploadedByUid: uid,
+  })
+}
+
+// Trash/restore are the only lifecycle actions in this release — both fully reversible,
+// neither deletes anything. Owner-only by the existing users/{uid}/** rule (no rule
+// change needed).
+export async function fsTrashPhoto(uid, photoId) {
+  await updateDoc(userDoc(uid, 'photos', photoId), {
+    status: 'trashed',
+    trashedAt: new Date().toISOString(),
+  })
+}
+
+export async function fsRestorePhoto(uid, photoId) {
+  await updateDoc(userDoc(uid, 'photos', photoId), {
+    status: 'active',
+    trashedAt: null,
+  })
+}
+
+// Read-only "where is this used" scan across every place a photo reference can
+// independently exist. Informational only — returns a plain list of human-readable
+// locations, never a boolean, and never deletes or modifies anything in any store it
+// reads. There is no irreversible action in this release for it to gate.
+//
+// Canonical and mirror copies of the SAME logical placement (shared element id, per
+// collab.js's pushElement) are deduplicated into one entry. A public-share snapshot is
+// a genuinely separate placement (a disconnected deep copy) and is never deduplicated
+// against the live canonical/mirror copy it was published from.
+export async function fsCheckPhotoReferences(uid, photoId, storageUrl) {
+  const notebooks = await fsLoadNotebooks(uid)
+  const notebookById = new Map(notebooks.map(n => [n.id, n]))
+  const locations = []
+  const seenCanonicalOrMirror = new Set()
+
+  // 1. Canonical owner elements.
+  const canonicalSnap = await getDocs(userCol(uid, 'elements'))
+  canonicalSnap.docs.forEach(d => {
+    const el = d.data()
+    if (isPhotoBearingType(el.type) && matchesPhotoReference(el.data, photoId, storageUrl)) {
+      const key = placementKey(el.notebookId, el.pageId, el.id)
+      if (!seenCanonicalOrMirror.has(key)) {
+        seenCanonicalOrMirror.add(key)
+        locations.push({
+          type: 'element',
+          notebookId: el.notebookId,
+          notebookName: notebookById.get(el.notebookId)?.name ?? el.notebookId,
+          pageId: el.pageId,
+        })
+      }
+    }
+  })
+
+  // 2. Collaboration mirror elements — scanned independently (never assumed to agree
+  // with canonical), one query per notebook the owner owns.
+  for (const nb of notebooks) {
+    const mirrorSnap = await getDocs(collection(firestoreDb, 'journals', nb.id, 'elements'))
+    mirrorSnap.docs.forEach(d => {
+      const el = d.data()
+      if (isPhotoBearingType(el.type) && matchesPhotoReference(el.data, photoId, storageUrl)) {
+        const key = placementKey(nb.id, el.pageId, el.id)
+        if (!seenCanonicalOrMirror.has(key)) {
+          seenCanonicalOrMirror.add(key)
+          locations.push({ type: 'element', notebookId: nb.id, notebookName: nb.name, pageId: el.pageId })
+        }
+      }
+    })
+  }
+
+  // 3. Notebook cover URLs — a plain URL string on the notebook doc, not a photoId
+  // reference, so this is a storageUrl match, not a foreign-key lookup.
+  notebooks.forEach(nb => {
+    if (nb.coverPhotoUrl && nb.coverPhotoUrl === storageUrl) {
+      locations.push({ type: 'cover', notebookId: nb.id, notebookName: nb.name })
+    }
+  })
+
+  // 4. Published public-share snapshots — a disconnected deep copy, checked separately
+  // from canonical/mirror on purpose (a stale published snapshot can still reference a
+  // photo the live journal no longer does).
+  for (const nb of notebooks.filter(n => n.isPublic)) {
+    const snapshot = await fsLoadPublicNotebook(nb.id)
+    if (!snapshot) continue
+    if (snapshot.coverPhotoUrl && snapshot.coverPhotoUrl === storageUrl) {
+      locations.push({ type: 'public-cover', notebookId: nb.id, notebookName: nb.name })
+    }
+    for (const page of (snapshot.pages ?? [])) {
+      for (const el of (page.elements ?? [])) {
+        if (isPhotoBearingType(el.type) && matchesPhotoReference(el.data, photoId, storageUrl)) {
+          locations.push({ type: 'public-element', notebookId: nb.id, notebookName: nb.name, pageId: page.id })
+        }
+      }
+    }
+  }
+
+  return locations
 }
 
 export async function fsGetFirstPageCover(uid, notebookId) {

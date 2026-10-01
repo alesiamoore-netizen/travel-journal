@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:photo-library:pure": "node --test test/photo-library-emulator/__tests__/06-photo-library-pure-logic.test.mjs",
+    "test:photo-library:emulator": "firebase emulators:exec --project demo-travel-journal --only firestore --config test/photo-library-emulator/firebase.json \"node --test test/photo-library-emulator/__tests__/05-photo-library-mvp.test.mjs\"",
+    "test:photo-library": "npm run test:photo-library:pure && npm run test:photo-library:emulator"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "^3.27.1",
@@ -27,8 +30,10 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.19",
+    "firebase-tools": "^15.31.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "vite": "^5.3.1",

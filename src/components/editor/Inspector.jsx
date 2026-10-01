@@ -6,7 +6,7 @@ import ThemePanel from './ThemePanel'
 import CollabPanel from './CollabPanel'
 import { TEXT_STYLES, applyTextStyle } from '../../data/textStyles'
 import { STICKER_LIST } from './elements/StickerElement'
-import { fsLoadPhotos, fsSavePhoto } from '../../firebase/firestoreHelpers'
+import { fsLoadPhotos, fsLoadAllPhotos, fsSavePhoto } from '../../firebase/firestoreHelpers'
 import { uploadPhoto } from '../../firebase/storageHelpers'
 import AiCaptionButton from './AiCaptionButton'
 import { orderStickersForTheme } from '../../data/themes'
@@ -169,40 +169,78 @@ function TextInspector({ element }) {
   )
 }
 
+// `scope` toggles between the current journal's own photos and the owner's whole
+// cross-journal library (fsLoadAllPhotos — already excludes trashed photos via the
+// shared isActivePhoto predicate, same as fsLoadPhotos). Selecting any photo, from
+// either scope, reuses the existing document's own {photoId, storageUrl, thumbnailUrl}
+// — never re-uploads or copies it.
 function PhotoPicker({ notebookId, uid, selectedId, onSelect }) {
+  const [scope, setScope] = useState('journal') // 'journal' | 'all'
   const [photos, setPhotos] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [retryTick, setRetryTick] = useState(0)
 
   useEffect(() => {
-    if (uid && notebookId) {
-      fsLoadPhotos(uid, notebookId).then(ps => setPhotos(ps ?? []))
-    }
-  }, [uid, notebookId])
-
-  if (photos.length === 0) {
-    return (
-      <p className="text-xs text-stone-400 leading-relaxed">
-        No photos yet — drag an image into an image block to upload.
-      </p>
-    )
-  }
+    if (!uid || !notebookId) return
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    const load = scope === 'all' ? fsLoadAllPhotos(uid) : fsLoadPhotos(uid, notebookId)
+    load.then(ps => { if (!cancelled) setPhotos(ps ?? []) })
+      .catch(err => {
+        console.error('[PhotoPicker] failed to load photos:', err)
+        if (!cancelled) setError('Could not load photos.')
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [uid, notebookId, scope, retryTick])
 
   return (
-    <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
-      {photos.map(p => (
-        <button
-          key={p.id}
-          onClick={() => onSelect(p)}
-          className={`aspect-square rounded overflow-hidden border-2 transition-colors ${
-            selectedId === p.id
-              ? 'border-amber-500'
-              : 'border-transparent hover:border-stone-300'
-          }`}
-        >
-          {p.thumbnailUrl
-            ? <img src={p.thumbnailUrl} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full bg-stone-200" />}
-        </button>
-      ))}
+    <div className="space-y-2">
+      <div className="flex gap-1 text-[11px]">
+        {[['journal', 'This journal'], ['all', 'All my photos']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setScope(key)}
+            className={`px-2 py-0.5 rounded-full border transition-colors ${
+              scope === key ? 'border-amber-600 bg-amber-50 text-amber-800' : 'border-stone-200 text-stone-400 hover:text-stone-600'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {loading && <p className="text-xs text-stone-400">Loading…</p>}
+      {!loading && error && (
+        <p className="text-xs text-red-600">
+          {error} <button onClick={() => setRetryTick(t => t + 1)} className="underline">Retry</button>
+        </p>
+      )}
+      {!loading && !error && photos.length === 0 && (
+        <p className="text-xs text-stone-400 leading-relaxed">
+          {scope === 'all' ? 'No photos yet.' : 'No photos yet — drag an image into an image block to upload.'}
+        </p>
+      )}
+      {!loading && !error && photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
+          {photos.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onSelect(p)}
+              className={`aspect-square rounded overflow-hidden border-2 transition-colors ${
+                selectedId === p.id
+                  ? 'border-amber-500'
+                  : 'border-transparent hover:border-stone-300'
+              }`}
+            >
+              {p.thumbnailUrl
+                ? <img src={p.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                : <div className="w-full h-full bg-stone-200" />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

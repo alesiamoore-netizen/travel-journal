@@ -26,3 +26,6 @@ qa_asi_form_report*/
 *.py
 /*.png
 /*.heic
+firestore-debug.log
+firebase-debug.log
+ui-debug.log

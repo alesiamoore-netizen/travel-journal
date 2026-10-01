@@ -88,11 +88,26 @@ export default function Dashboard() {
             )}
             <span className="text-sm text-stone-600 hidden sm:block">{user.displayName ?? user.email}</span>
           </div>
+          {/* Mobile-only compact entry — the full-text link below is desktop-only */}
+          <Link
+            to="/photo-library"
+            className="sm:hidden text-stone-400 hover:text-stone-600 text-lg leading-none px-1"
+            aria-label="Photo Library"
+            title="Photo Library"
+          >
+            🖼️
+          </Link>
           <Link
             to="/memories"
             className="text-stone-400 hover:text-stone-600 text-xs px-2 py-1 rounded transition-colors hidden sm:block"
           >
             Memories
+          </Link>
+          <Link
+            to="/photo-library"
+            className="text-stone-400 hover:text-stone-600 text-xs px-2 py-1 rounded transition-colors hidden sm:block"
+          >
+            Photo Library
           </Link>
           <Link
             to="/timeline"

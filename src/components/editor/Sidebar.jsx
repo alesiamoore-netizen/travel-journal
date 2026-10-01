@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { useAuth } from '../../context/AuthContext'
-import { fsLoadPhotos, fsLoadElements } from '../../firebase/firestoreHelpers'
+import { fsLoadPhotos, fsLoadAllPhotos, fsLoadElements } from '../../firebase/firestoreHelpers'
 import { subscribePresence } from '../../firebase/collab'
 import LayoutPicker from './LayoutPicker'
 import ThemeDetailModal from './ThemeDetailModal'
@@ -9,35 +9,74 @@ import DailyLayoutPicker from './DailyLayoutPicker'
 import MonthStyleModal from './MonthStyleModal'
 import PhotoADayProgress from './PhotoADayProgress'
 
+// `scope` toggles between this journal's own photos and the owner's whole cross-journal
+// library (fsLoadAllPhotos — already excludes trashed photos). Selecting a photo reuses
+// its existing {photoId, storageUrl, thumbnailUrl} via onUse — never re-uploads it.
 function PhotoLibrary({ notebookId, onUse }) {
   const { user } = useAuth()
+  const [scope, setScope] = useState('journal') // 'journal' | 'all'
   const [photos, setPhotos] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [retryTick, setRetryTick] = useState(0)
 
   useEffect(() => {
     if (!user) return
-    fsLoadPhotos(user.uid, notebookId).then(setPhotos)
-  }, [notebookId, user])
-
-  if (!photos.length) return (
-    <div className="p-3 text-center text-xs text-stone-400 leading-relaxed">
-      No photos yet.<br/>Upload photos to image blocks to build your library.
-    </div>
-  )
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    const load = scope === 'all' ? fsLoadAllPhotos(user.uid) : fsLoadPhotos(user.uid, notebookId)
+    load.then(ps => { if (!cancelled) setPhotos(ps ?? []) })
+      .catch(err => {
+        console.error('[Sidebar PhotoLibrary] failed to load photos:', err)
+        if (!cancelled) setError('Could not load photos.')
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [notebookId, user, scope, retryTick])
 
   return (
-    <div className="grid grid-cols-3 gap-1 p-2">
-      {photos.map(p => (
-        <button
-          key={p.id}
-          onClick={() => onUse(p)}
-          className="aspect-square rounded overflow-hidden border border-transparent hover:border-amber-400 transition-colors"
-          title={p.filename}
-        >
-          {p.thumbnailUrl
-            ? <img src={p.thumbnailUrl} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full bg-stone-200" />}
-        </button>
-      ))}
+    <div className="p-2 space-y-2">
+      <div className="flex gap-1 text-[11px] px-1">
+        {[['journal', 'This journal'], ['all', 'All my photos']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setScope(key)}
+            className={`px-2 py-0.5 rounded-full border transition-colors ${
+              scope === key ? 'border-amber-600 bg-amber-50 text-amber-800' : 'border-stone-200 text-stone-400 hover:text-stone-600'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {loading && <div className="p-3 text-center text-xs text-stone-400">Loading…</div>}
+      {!loading && error && (
+        <div className="p-3 text-center text-xs text-red-600">
+          {error} <button onClick={() => setRetryTick(t => t + 1)} className="underline">Retry</button>
+        </div>
+      )}
+      {!loading && !error && !photos.length && (
+        <div className="p-3 text-center text-xs text-stone-400 leading-relaxed">
+          {scope === 'all' ? 'No photos yet.' : <>No photos yet.<br/>Upload photos to image blocks to build your library.</>}
+        </div>
+      )}
+      {!loading && !error && photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-1">
+          {photos.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onUse(p)}
+              className="aspect-square rounded overflow-hidden border border-transparent hover:border-amber-400 transition-colors"
+              title={p.filename}
+            >
+              {p.thumbnailUrl
+                ? <img src={p.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                : <div className="w-full h-full bg-stone-200" />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
