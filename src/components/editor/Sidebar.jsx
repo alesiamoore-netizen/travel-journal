@@ -467,10 +467,12 @@ export default function Sidebar() {
         })}
       </div>}
 
-      {/* Element palette — only on pages tab */}
+      {/* Element palette — only on pages tab. Capped height + its own scroll, so this
+          list (which can run to a dozen buttons) can never squeeze the page list above
+          it down to a sliver — the page list keeps the majority of the sidebar's height. */}
       {sideTab === 'pages' && (
-        <div className="border-t border-stone-100 flex-shrink-0">
-          <div className="px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wide">
+        <div className="border-t border-stone-100 flex-shrink-0 max-h-48 overflow-y-auto">
+          <div className="px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wide sticky top-0 bg-white">
             Add Element
           </div>
           <div className="px-2 pb-3 space-y-1">
